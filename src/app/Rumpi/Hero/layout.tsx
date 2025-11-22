@@ -36,9 +36,8 @@ export default function HeroLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+  // cukup bungkus pakai div/section/fragment
+  return <>{children}</>;
+  // atau kalau mau styling:
+  // return <section className="min-h-screen">{children}</section>;
 }

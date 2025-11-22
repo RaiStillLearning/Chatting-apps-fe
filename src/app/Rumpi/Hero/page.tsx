@@ -8,6 +8,7 @@ import { TextAnimate } from "@/components/ui/text-animate";
 import { Button } from "@/components/ui/button";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { AuroraText } from "@/components/ui/aurora-text";
 import { MessageCircle, Camera, Heart, Bell } from "lucide-react";
 
 function LineShadowTextDemo() {
@@ -64,11 +65,14 @@ export default function HeroPage() {
           <Button
             variant="outline"
             className="w-full sm:w-32"
-            onClick={() => router.push("/Auth/Signup")}
+            onClick={() => router.push("/Auth/Login")}
           >
-            Sign In
+            Login
           </Button>
         </div>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-center">
+          Discover what makes <AuroraText>Rumpi </AuroraText> Unique
+        </h2>
       </section>
 
       {/* GRID SECTION */}
