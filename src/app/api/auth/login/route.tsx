@@ -1,26 +1,38 @@
 // src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { setAuthCookie } from "@/lib/auth/cookies";
+import { setAuthCookieOnResponse } from "@/lib/auth/cookies";
+import { signAuthToken } from "@/lib/auth/jwt";
+
+const demoUsers = [
+  { id: "user1", email: "demo@rumpi.app", password: "rumpi123" },
+  { id: "user2", email: "user1@rumpi.app", password: "rumpi123" },
+  { id: "user3", email: "user2@rumpi.app", password: "rumpi123" },
+];
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { email, password } = body;
+  const { email, password } = await req.json();
 
-  // TODO: validasi user ke database, hashing password, dll
-  const isValidUser = email === "test@rumpi.app" && password === "123456";
+  const user = demoUsers.find(
+    (u) => u.email === email && u.password === password
+  );
 
-  if (!isValidUser) {
+  if (!user) {
     return NextResponse.json(
       { message: "Invalid credentials" },
       { status: 401 }
     );
   }
 
-  // TODO: generate JWT sungguhan
-  const fakeToken = "FAKE_JWT_TOKEN";
+  const token = signAuthToken({ userId: user.id, email });
 
-  // set cookie auth
-  setAuthCookie(fakeToken);
+  // bikin response dulu
+  const res = NextResponse.json({
+    message: "Login success",
+    user: { id: user.id, email: user.email },
+  });
 
-  return NextResponse.json({ message: "Login success" });
+  // tempel cookie ke response
+  setAuthCookieOnResponse(res, token);
+
+  return res;
 }

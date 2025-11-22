@@ -24,20 +24,10 @@
 //   );
 // }
 
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Rumpi",
-  description: "Chatting apps Rumpi (ngobrol santai)",
-};
-
 export default function HeroLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // cukup bungkus pakai div/section/fragment
   return <>{children}</>;
-  // atau kalau mau styling:
-  // return <section className="min-h-screen">{children}</section>;
 }

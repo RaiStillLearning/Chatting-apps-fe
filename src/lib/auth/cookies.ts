@@ -1,10 +1,10 @@
 // src/lib/auth/cookies.ts
-import { cookies } from "next/headers";
+import type { NextRequest, NextResponse } from "next/server";
 
-const ACCESS_TOKEN_KEY = "accessToken";
+export const ACCESS_TOKEN_COOKIE = "accessToken";
 
-export function setAuthCookie(token: string) {
-  cookies().set(ACCESS_TOKEN_KEY, token, {
+export function setAuthCookieOnResponse(res: NextResponse, token: string) {
+  res.cookies.set(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: true,
     sameSite: "strict",
@@ -13,10 +13,11 @@ export function setAuthCookie(token: string) {
   });
 }
 
-export function removeAuthCookie() {
-  cookies().delete(ACCESS_TOKEN_KEY);
+export function removeAuthCookieOnResponse(res: NextResponse) {
+  res.cookies.delete(ACCESS_TOKEN_COOKIE);
 }
 
-export function getAuthCookie() {
-  return cookies().get(ACCESS_TOKEN_KEY)?.value;
+// dipakai di middleware atau route handler untuk BACA cookie dari request
+export function getAuthCookieFromRequest(req: NextRequest) {
+  return req.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
 }
