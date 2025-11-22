@@ -1,4 +1,3 @@
-// app/auth/signup/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -7,7 +6,7 @@ import { SignupForm } from "@/components/signup-form";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,7 +22,6 @@ export default function SignupPage() {
       confirmPassword: formData.get("confirmPassword"),
     };
 
-    // TODO: kirim ke /api/auth/signup
     console.log(payload);
 
     setLoading(false);
@@ -32,7 +30,11 @@ export default function SignupPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <SignupForm className="w-full max-w-md" onSubmit={handleSignup} />
+      <SignupForm
+        className="w-full max-w-md"
+        onSubmit={handleSignup}
+        loading={loading}
+      />
     </main>
   );
 }

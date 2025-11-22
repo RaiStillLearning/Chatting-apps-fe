@@ -26,7 +26,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res.ok) {
-      router.push("/dashboard");
+      router.push("/Rumpi/Dashboard");
     } else {
       // TODO: tampilkan error
       alert("Login failed");

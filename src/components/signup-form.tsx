@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-type SignupFormProps = React.ComponentProps<typeof Card> & {
+type SignupFormProps = {
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+  className?: string;
+  loading?: boolean;
 };
 
 export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
@@ -83,7 +85,7 @@ export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
                   Sign up with Google
                 </Button>
                 <FieldDescription className="px-6 text-center">
-                  Already have an account? <a href="#">Sign in</a>
+                  Already have an account? <a href="/Auth/Login">Log in</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>

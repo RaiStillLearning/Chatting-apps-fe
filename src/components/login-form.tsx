@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-type LoginFormProps = React.ComponentProps<"div"> & {
+type LoginFormProps = {
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+  className?: string;
+  loading?: boolean;
 };
 
 export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
@@ -63,7 +65,7 @@ export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
                   Login with Google
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="#">Sign up</a>
+                  Don&apos;t have an account? <a href="/Auth/Signup">Sign up</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>
