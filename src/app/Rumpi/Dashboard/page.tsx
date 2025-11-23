@@ -101,33 +101,29 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="w-full">
-      {/* What's New Section */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-6">What&apos;s New</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="w-full space-y-10 px-4 md:px-6 lg:px-8 py-6">
+      {/* What's New */}
+      <section>
+        <h2 className="text-2xl font-bold mb-4">What&apos;s New</h2>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {trendingTopics.map((topic, index) => (
             <div
               key={index}
-              className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group border"
+              className="bg-card rounded-xl overflow-hidden border hover:shadow-md transition-all cursor-pointer group"
             >
-              <div className="relative h-40 overflow-hidden">
+              <div className="relative h-40">
                 <Image
                   src={topic.image}
                   alt={topic.title}
                   fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  priority={index < 2} // Load first 2 images with priority
                 />
               </div>
-              <div className="p-4">
-                <h3 className="font-semibold mb-2 line-clamp-2">
-                  {topic.title}
-                </h3>
-                <div className="flex items-center text-sm text-muted-foreground">
+              <div className="p-4 space-y-1">
+                <h3 className="font-semibold line-clamp-2">{topic.title}</h3>
+                <div className="flex items-center text-muted-foreground text-sm">
                   <Eye className="w-4 h-4 mr-1" />
-                  <span>{topic.views}</span>
+                  {topic.views}
                 </div>
               </div>
             </div>
@@ -137,54 +133,44 @@ export default function DashboardPage() {
 
       {/* Explore Feed */}
       <section>
-        <h2 className="text-2xl font-bold mb-6">Explore Feed</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <h2 className="text-2xl font-bold mb-4">Explore Feed</h2>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {posts.map((post) => (
             <div
               key={post.id}
-              className="bg-card rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden border"
+              className="bg-card rounded-xl overflow-hidden border hover:shadow-md transition"
             >
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                    <Image
-                      src={post.avatar}
-                      alt={post.author}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
+                  <Image
+                    src={post.avatar}
+                    alt={post.author}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
                   <span className="font-semibold">{post.author}</span>
                 </div>
-                <button className="p-2 hover:bg-accent rounded-full transition-colors">
+                <button className="p-2 hover:bg-accent rounded-full">
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               </div>
-              <div className="relative h-64 overflow-hidden">
+
+              <div className="relative h-64">
                 <Image
                   src={post.image}
                   alt="Post"
                   fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   className="object-cover"
                 />
               </div>
-              <div className="p-4">
-                <p className="text-sm mb-4 line-clamp-3">{post.caption}</p>
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <button className="flex items-center gap-2 hover:text-red-500 transition-colors">
-                    <Heart className="w-5 h-5" />
-                    <span className="text-sm font-medium">{post.likes}</span>
-                  </button>
-                  <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="text-sm font-medium">{post.comments}</span>
-                  </button>
-                  <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
-                    <Share2 className="w-5 h-5" />
-                    <span className="text-sm font-medium">{post.shares}</span>
-                  </button>
+
+              <div className="p-4 space-y-3">
+                <p className="text-sm line-clamp-3">{post.caption}</p>
+                <div className="flex justify-between pt-3 border-t">
+                  <Action icon={<Heart />} count={post.likes} />
+                  <Action icon={<MessageCircle />} count={post.comments} />
+                  <Action icon={<Share2 />} count={post.shares} />
                 </div>
               </div>
             </div>
@@ -192,5 +178,14 @@ export default function DashboardPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function Action({ icon, count }: { icon: React.ReactNode; count: number }) {
+  return (
+    <button className="flex items-center gap-2 hover:text-primary transition">
+      {icon}
+      <span className="text-sm font-medium">{count}</span>
+    </button>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+// ❌ HAPUS useSession
+// import { useSession } from "next-auth/react";
+
 import {
   User,
   Bell,
@@ -28,12 +31,14 @@ import {
 
 import { Separator } from "@/components/ui/separator";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=shadcn",
-  },
+// future: fetch profile from express token
+const defaultUser = {
+  name: "Guest",
+  email: "guest@example.com",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=guest",
+};
+
+const navData = {
   navMain: [
     { title: "Home", url: "/Rumpi/Dashboard", icon: Home },
     { title: "Chat", url: "#", icon: MessageSquare },
@@ -49,7 +54,10 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  // ❌ Tidak ada useSession lagi
+  const user = defaultUser;
+
   return (
     <Sidebar
       collapsible="icon"
@@ -60,14 +68,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent className="px-2 py-3 md:py-4">
             <div className="flex items-center gap-2 px-1 md:px-2">
-              {/* LOGO - hide only when collapsed at desktop */}
               <img
                 src="/logo/pplg.png"
                 alt="Rumpi Logo"
                 className="w-8 h-8 rounded-lg object-cover group-data-[collapsible=icon]:hidden"
               />
-
-              {/* TITLE hide when collapsed */}
               <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                 <span className="font-semibold text-sm md:text-base">
                   Rumpi
@@ -85,7 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.navMain.map((item) => (
+              {navData.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <a href={item.url}>
@@ -106,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.projects.map((item) => (
+              {navData.projects.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton asChild tooltip={item.name}>
                     <a href={item.url}>
@@ -129,14 +134,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild size="lg">
               <a href="#profile">
                 <img
-                  src={data.user.avatar}
-                  alt={data.user.name}
+                  src={user.avatar}
+                  alt={user.name}
                   className="size-8 rounded-full"
                 />
                 <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
-                  <span className="font-semibold">{data.user.name}</span>
+                  <span className="font-semibold">{user.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    {data.user.email}
+                    {user.email}
                   </span>
                 </div>
               </a>
@@ -150,4 +155,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 }
 
-export { data as sidebarData };
+export { navData as sidebarData };

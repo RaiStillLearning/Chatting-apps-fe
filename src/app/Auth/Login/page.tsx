@@ -1,8 +1,7 @@
-// app/auth/login/page.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
@@ -14,9 +13,9 @@ export default function LoginPage() {
     setLoading(true);
 
     const form = e.currentTarget;
-    const formData = new FormData(form);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const data = new FormData(form);
+    const email = data.get("email");
+    const password = data.get("password");
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -28,7 +27,6 @@ export default function LoginPage() {
     if (res.ok) {
       router.push("/Rumpi/Dashboard");
     } else {
-      // TODO: tampilkan error
       alert("Login failed");
     }
   }
@@ -36,9 +34,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <LoginForm
-        className="w-full max-w-md"
         onSubmit={handleLogin}
-        aria-busy={loading}
+        loading={loading}
+        className="w-full max-w-md"
       />
     </main>
   );

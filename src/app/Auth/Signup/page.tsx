@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SignupForm } from "@/components/signup-form";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -12,20 +14,29 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    const payload = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      password: formData.get("password"),
-      confirmPassword: formData.get("confirmPassword"),
+    const data = new FormData(e.currentTarget);
+    const body = {
+      name: data.get("name"),
+      email: data.get("email"),
+      password: data.get("password"),
+      confirmPassword: data.get("confirmPassword"),
     };
 
-    console.log(payload);
+    const res = await fetch(`${API_URL}/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
 
     setLoading(false);
-    router.push("/auth/login");
+
+    if (res.ok) {
+      router.push("/Rumpi/Dashboard");
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err.message ?? "Signup gagal");
+    }
   }
 
   return (

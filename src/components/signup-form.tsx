@@ -1,4 +1,7 @@
-// src/components/auth/signup-form.tsx
+"use client";
+
+import * as React from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,20 +19,21 @@ import {
 import { Input } from "@/components/ui/input";
 
 type SignupFormProps = {
-  onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
   className?: string;
-  loading?: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  loading: boolean;
 };
 
-export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
+export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
   return (
-    <Card {...props}>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Create an account</CardTitle>
         <CardDescription>
           Enter your information below to create your account
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={onSubmit}>
           <FieldGroup>
@@ -41,8 +45,10 @@ export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
                 type="text"
                 placeholder="John Doe"
                 required
+                disabled={loading}
               />
             </Field>
+
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
               <Input
@@ -51,19 +57,21 @@ export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
                 type="email"
                 placeholder="m@example.com"
                 required
+                disabled={loading}
               />
-              <FieldDescription>
-                We&apos;ll use this to contact you. We will not share your email
-                with anyone else.
-              </FieldDescription>
             </Field>
+
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input id="password" name="password" type="password" required />
-              <FieldDescription>
-                Must be at least 8 characters long.
-              </FieldDescription>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                disabled={loading}
+              />
             </Field>
+
             <Field>
               <FieldLabel htmlFor="confirm-password">
                 Confirm Password
@@ -73,22 +81,36 @@ export function SignupForm({ onSubmit, ...props }: SignupFormProps) {
                 name="confirmPassword"
                 type="password"
                 required
+                disabled={loading}
               />
-              <FieldDescription>Please confirm your password.</FieldDescription>
             </Field>
-            <FieldGroup>
-              <Field className="space-y-3">
-                <Button type="submit" className="w-full">
-                  Create Account
-                </Button>
-                <Button variant="outline" type="button" className="w-full">
+
+            <Field className="space-y-3">
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Create Account"}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                asChild
+                disabled={loading}
+              >
+                <a href="http://localhost:5000/auth/google?redirect=/Rumpi/Dashboard">
                   Sign up with Google
-                </Button>
-                <FieldDescription className="px-6 text-center">
-                  Already have an account? <a href="/Auth/Login">Log in</a>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
+                </a>
+              </Button>
+
+              <FieldDescription className="px-6 text-center">
+                Already have an account?{" "}
+                <a
+                  href="/Auth/Login"
+                  className="underline-offset-4 hover:underline"
+                >
+                  Log in
+                </a>
+              </FieldDescription>
+            </Field>
           </FieldGroup>
         </form>
       </CardContent>

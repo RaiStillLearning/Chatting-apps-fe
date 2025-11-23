@@ -1,4 +1,6 @@
-// src/components/auth/login-form.tsx
+"use client";
+
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +24,9 @@ type LoginFormProps = {
   loading?: boolean;
 };
 
-export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
+export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <Card>
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
@@ -32,6 +34,7 @@ export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
             Enter your email below to login to your account
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={onSubmit}>
             <FieldGroup>
@@ -43,8 +46,10 @@ export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
                   type="email"
                   placeholder="m@example.com"
                   required
+                  disabled={loading}
                 />
               </Field>
+
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -55,17 +60,40 @@ export function LoginForm({ className, onSubmit, ...props }: LoginFormProps) {
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" name="password" type="password" required />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  disabled={loading}
+                />
               </Field>
+
               <Field className="space-y-3">
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Logging in..." : "Login"}
                 </Button>
-                <Button variant="outline" type="button" className="w-full">
-                  Login with Google
+
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full"
+                  asChild
+                  disabled={loading}
+                >
+                  <a href="http://localhost:5000/auth/google?redirect=/Rumpi/Dashboard">
+                    Login with Google
+                  </a>
                 </Button>
+
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="/Auth/Signup">Sign up</a>
+                  Don&apos;t have an account?{" "}
+                  <a
+                    href="/Auth/Signup"
+                    className="underline-offset-4 hover:underline"
+                  >
+                    Sign up
+                  </a>
                 </FieldDescription>
               </Field>
             </FieldGroup>

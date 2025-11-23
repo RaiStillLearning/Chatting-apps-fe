@@ -33,7 +33,6 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
         {/* Header */}
         <header className="sticky top-0 z-10 h-16 flex items-center justify-between border-b px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-4 flex-1">
-            {/* Sidebar Trigger for desktop */}
             <SidebarTrigger className="hidden lg:flex" />
 
             {/* Mobile Logo */}
@@ -58,7 +57,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
               />
             </div>
 
-            {/* Mobile Search Button */}
+            {/* Mobile search button */}
             <Button
               variant="ghost"
               size="icon"
@@ -69,11 +68,11 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
             </Button>
           </div>
 
-          {/* Right side actions */}
+          {/* Right actions */}
           <div className="flex items-center gap-2">
             <button className="relative p-2 hover:bg-accent rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
 
             <ThemeToggle />
@@ -86,12 +85,12 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Main content */}
         <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 bg-background pb-20 lg:pb-8">
           <div className="w-full max-w-7xl mx-auto">{children}</div>
         </main>
 
-        {/* Mobile Bottom Navigation */}
+        {/* Mobile bottom navigation */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
           <div className="flex items-center justify-around h-16 px-2">
             {mobileNavItems.map((item) => {
@@ -118,14 +117,15 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      {/* Mobile Search Sheet */}
-      <Sheet open={searchOpen} onOpenChange={setSearchOpen}>
-        <SheetContent side="top" className="h-[100vh] sm:h-auto">
-          <SheetHeader className="space-y-4">
-            <div className="flex items-center justify-between">
+      {/* Mobile Search Sheet — only render when open */}
+      {searchOpen && (
+        <Sheet open={searchOpen} onOpenChange={setSearchOpen}>
+          <SheetContent side="top" className="h-[100vh] sm:h-auto">
+            <SheetHeader className="space-y-4">
               <SheetTitle>Search</SheetTitle>
-            </div>
-            <div className="relative">
+            </SheetHeader>
+
+            <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
@@ -136,9 +136,9 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
                 autoFocus
               />
             </div>
-          </SheetHeader>
-        </SheetContent>
-      </Sheet>
+          </SheetContent>
+        </Sheet>
+      )}
     </SidebarProvider>
   );
 }
