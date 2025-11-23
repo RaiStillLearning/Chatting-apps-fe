@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  GalleryVerticalEnd,
   User,
   Bell,
   Home,
@@ -26,9 +25,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 
-import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
 
 const data = {
   user: {
@@ -53,28 +51,36 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar
+      collapsible="icon"
+      className="group/sidebar hidden lg:flex"
+      {...props}
+    >
       <SidebarHeader>
         <SidebarGroup>
-          <SidebarGroupContent className="px-2 py-4">
-            <div className="flex items-center gap-2 px-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <GalleryVerticalEnd className="size-4" />
-              </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-semibold">Rumpi</span>
-                <span className="text-xs text-muted-foreground">
+          <SidebarGroupContent className="px-2 py-3 md:py-4">
+            <div className="flex items-center gap-2 px-1 md:px-2">
+              {/* LOGO - hide only when collapsed at desktop */}
+              <img
+                src="/logo/pplg.png"
+                alt="Rumpi Logo"
+                className="w-8 h-8 rounded-lg object-cover group-data-[collapsible=icon]:hidden"
+              />
+
+              {/* TITLE hide when collapsed */}
+              <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
+                <span className="font-semibold text-sm md:text-base">
+                  Rumpi
+                </span>
+                <span className="text-[10px] md:text-xs text-muted-foreground">
                   Social App
                 </span>
               </div>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent></SidebarGroupContent>
-        </SidebarGroup>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -84,7 +90,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <a href={item.url}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="lg:group-data-[state=collapsed]/sidebar:hidden">
+                        {item.title}
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -103,7 +111,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton asChild tooltip={item.name}>
                     <a href={item.url}>
                       <item.icon />
-                      <span>{item.name}</span>
+                      <span className="lg:group-data-[state=collapsed]/sidebar:hidden">
+                        {item.name}
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -123,7 +133,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   alt={data.user.name}
                   className="size-8 rounded-full"
                 />
-                <div className="flex flex-col gap-0.5 leading-none">
+                <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
                   <span className="font-semibold">{data.user.name}</span>
                   <span className="text-xs text-muted-foreground">
                     {data.user.email}
@@ -139,3 +149,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   );
 }
+
+export { data as sidebarData };
