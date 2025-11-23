@@ -619,27 +619,29 @@ function SidebarMenuSkeleton({
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+      suppressHydrationWarning
       {...props}
     >
       {showIcon && (
         <Skeleton
           className="size-4 rounded-md"
           data-sidebar="menu-skeleton-icon"
+          suppressHydrationWarning
         />
       )}
       <Skeleton
         className="h-4 max-w-[var(--skeleton-width)] flex-1"
         data-sidebar="menu-skeleton-text"
+        suppressHydrationWarning
         style={
           {
-            "--skeleton-width": width ?? "100%", // fallback sebelum effect jalan
+            "--skeleton-width": width ?? "100%",
           } as React.CSSProperties
         }
       />
     </div>
   );
 }
-
 function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul

@@ -24,9 +24,11 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
 
-// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -37,7 +39,7 @@ const data = {
     {
       name: "Rumpi",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: "Cihuyy",
     },
     {
       name: "Acme Corp.",
@@ -52,63 +54,59 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Feed",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
+          title: "Explore",
           url: "#",
         },
         {
-          title: "Starred",
+          title: "Following",
           url: "#",
         },
         {
-          title: "Settings",
+          title: "Trending",
           url: "#",
         },
       ],
     },
     {
-      title: "Models",
+      title: "Communities",
       url: "#",
       icon: Bot,
       items: [
         {
-          title: "Genesis",
+          title: "Technology",
           url: "#",
         },
         {
-          title: "Explorer",
+          title: "Design",
           url: "#",
         },
         {
-          title: "Quantum",
+          title: "Photography",
           url: "#",
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "Discover",
       url: "#",
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
+          title: "Top Posts",
           url: "#",
         },
         {
-          title: "Get Started",
+          title: "New Users",
           url: "#",
         },
         {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
+          title: "Topics",
           url: "#",
         },
       ],
@@ -119,19 +117,15 @@ const data = {
       icon: Settings2,
       items: [
         {
-          title: "General",
+          title: "Profile",
           url: "#",
         },
         {
-          title: "Team",
+          title: "Privacy",
           url: "#",
         },
         {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
+          title: "Notifications",
           url: "#",
         },
       ],
@@ -139,17 +133,17 @@ const data = {
   ],
   projects: [
     {
-      name: "Design Engineering",
+      name: "My Collections",
       url: "#",
       icon: Frame,
     },
     {
-      name: "Sales & Marketing",
+      name: "Saved Posts",
       url: "#",
       icon: PieChart,
     },
     {
-      name: "Travel",
+      name: "Bookmarks",
       url: "#",
       icon: Map,
     },
@@ -163,6 +157,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent></SidebarGroupContent>
+        </SidebarGroup>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>

@@ -7,9 +7,10 @@ import {
   MoreHorizontal,
   Eye,
 } from "lucide-react";
+
 import Image from "next/image";
 
-export default function DashboardPage() {
+export function DashboardContent() {
   const trendingTopics = [
     {
       image:
@@ -104,7 +105,7 @@ export default function DashboardPage() {
     <div className="w-full">
       {/* What's New Section */}
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-6">What&apos;s New</h2>
+        <h2 className="text-2xl font-bold mb-6">What`s New</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {trendingTopics.map((topic, index) => (
             <div
@@ -115,10 +116,7 @@ export default function DashboardPage() {
                 <Image
                   src={topic.image}
                   alt={topic.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  priority={index < 2} // Load first 2 images with priority
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
               <div className="p-4">
@@ -146,15 +144,11 @@ export default function DashboardPage() {
             >
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                    <Image
-                      src={post.avatar}
-                      alt={post.author}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
+                  <Image
+                    src={post.avatar}
+                    alt={post.author}
+                    className="w-10 h-10 rounded-full"
+                  />
                   <span className="font-semibold">{post.author}</span>
                 </div>
                 <button className="p-2 hover:bg-accent rounded-full transition-colors">
@@ -165,9 +159,7 @@ export default function DashboardPage() {
                 <Image
                   src={post.image}
                   alt="Post"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="p-4">
