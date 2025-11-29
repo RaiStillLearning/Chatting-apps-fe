@@ -14,20 +14,38 @@ export default function LoginPage() {
 
     const form = e.currentTarget;
     const data = new FormData(form);
+
     const email = data.get("email");
     const password = data.get("password");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          credentials: "include", // ✅ WAJIB untuk session
+          headers: {
+            "Content-Type": "application/json", // ✅ WAJIB
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
-    setLoading(false);
+      setLoading(false);
 
-    if (res.ok) {
-      router.push("/Rumpi/Dashboard");
-    } else {
-      alert("Login failed");
+      if (res.ok) {
+        router.push("/Rumpi/Dashboard");
+      } else {
+        const err = await res.json();
+        alert(err.message || "Login gagal");
+      }
+    } catch (error) {
+      setLoading(false);
+      alert("Server error");
+      console.error(error);
     }
   }
 

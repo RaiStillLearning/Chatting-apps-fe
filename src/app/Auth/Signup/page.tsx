@@ -10,32 +10,46 @@ export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  }
+
   async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
-    const data = new FormData(e.currentTarget);
-    const body = {
-      name: data.get("name"),
-      email: data.get("email"),
-      password: data.get("password"),
-      confirmPassword: data.get("confirmPassword"),
-    };
+    console.log("SIGNUP DATA:", form); // ✅ DEBUG
 
-    const res = await fetch(`${API_URL}/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (res.ok) {
-      router.push("/Rumpi/Dashboard");
-    } else {
-      const err = await res.json().catch(() => ({}));
-      alert(err.message ?? "Signup gagal");
+      if (res.ok) {
+        router.push("/Rumpi/Dashboard");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message ?? "Signup gagal");
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("SIGNUP ERROR:", error);
+      alert("Server tidak bisa dihubungi");
     }
   }
 
@@ -45,6 +59,8 @@ export default function SignupPage() {
         className="w-full max-w-md"
         onSubmit={handleSignup}
         loading={loading}
+        form={form}
+        onChange={handleChange}
       />
     </main>
   );

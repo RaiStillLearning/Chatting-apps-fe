@@ -22,9 +22,22 @@ type SignupFormProps = {
   className?: string;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   loading: boolean;
+  form: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  };
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
+export function SignupForm({
+  className,
+  onSubmit,
+  loading,
+  form,
+  onChange,
+}: SignupFormProps) {
   return (
     <Card className={cn(className)}>
       <CardHeader>
@@ -43,7 +56,8 @@ export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
                 id="name"
                 name="name"
                 type="text"
-                placeholder="John Doe"
+                value={form.name}
+                onChange={onChange}
                 required
                 disabled={loading}
               />
@@ -55,7 +69,8 @@ export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
+                value={form.email}
+                onChange={onChange}
                 required
                 disabled={loading}
               />
@@ -67,6 +82,8 @@ export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
                 id="password"
                 name="password"
                 type="password"
+                value={form.password}
+                onChange={onChange}
                 required
                 disabled={loading}
               />
@@ -80,6 +97,8 @@ export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
                 id="confirm-password"
                 name="confirmPassword"
                 type="password"
+                value={form.confirmPassword}
+                onChange={onChange}
                 required
                 disabled={loading}
               />
@@ -90,13 +109,14 @@ export function SignupForm({ className, onSubmit, loading }: SignupFormProps) {
                 {loading ? "Creating account..." : "Create Account"}
               </Button>
 
+              {/* ✅ FIX URL GOOGLE */}
               <Button
                 variant="outline"
                 className="w-full"
                 asChild
                 disabled={loading}
               >
-                <a href="http://localhost:5000/auth/google?redirect=/Rumpi/Dashboard">
+                <a href="http://localhost:5000/api/auth/google?redirect=/Rumpi/Dashboard">
                   Sign up with Google
                 </a>
               </Button>
