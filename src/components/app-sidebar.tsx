@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-// ❌ HAPUS useSession
-// import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 import {
   User,
@@ -14,6 +13,7 @@ import {
   Frame,
   PieChart,
   Map,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -28,14 +28,26 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 import { Separator } from "@/components/ui/separator";
 
-// future: fetch profile from express token
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const defaultUser = {
   name: "Guest",
   email: "guest@example.com",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=guest",
+  avatar: "/user-profile/default-avatar.png",
 };
 
 const navData = {
@@ -55,8 +67,51 @@ const navData = {
 };
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
-  // ❌ Tidak ada useSession lagi
-  const user = defaultUser;
+  const router = useRouter();
+
+  const [user, setUser] = React.useState(defaultUser);
+  const [isAuth, setIsAuth] = React.useState(false);
+
+  // ✅ AMBIL USER DARI SESSION
+  React.useEffect(() => {
+    async function fetchMe() {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        setUser({
+          name: data.displayName,
+          email: data.email,
+          avatar:
+            data.avatarUrl ?? `/user-profile/default-avatar.png${data.email}`,
+        });
+        setIsAuth(true);
+      } catch (error) {
+        console.log("Not logged in");
+      }
+    }
+
+    fetchMe();
+  }, []);
+
+  // ✅ LOGOUT FUNCTION
+  async function handleLogout() {
+    try {
+      await fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      router.push("/Auth/Login");
+      router.refresh();
+    } catch (error) {
+      alert("Logout gagal");
+    }
+  }
 
   return (
     <Sidebar
@@ -131,22 +186,57 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg">
-              <a href="#profile">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="size-8 rounded-full"
-                />
-                <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
-                  <span className="font-semibold">{user.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {user.email}
-                  </span>
-                </div>
-              </a>
+            <SidebarMenuButton size="lg">
+              <img
+                src={user.avatar}
+                alt={user.name}
+                onError={(e) => {
+                  e.currentTarget.src = "/user-profile/default-avatar.png";
+                }}
+                className="size-8 rounded-full"
+              />
+              <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
+                <span className="font-semibold">{user.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {user.email}
+                </span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
+          {isAuth && (
+            <SidebarMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <SidebarMenuButton
+                    tooltip="Logout"
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <LogOut />
+                    <span className="lg:group-data-[state=collapsed]/sidebar:hidden">
+                      Logout
+                    </span>
+                  </SidebarMenuButton>
+                </AlertDialogTrigger>
+
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Konfirmasi Logout</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Apakah kamu yakin ingin keluar dari akun ini?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>
+                      Ya, Logout
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
 
