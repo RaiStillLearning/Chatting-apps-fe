@@ -103,18 +103,28 @@ export default function ProfilePage() {
                 <UserIcon className="w-4 h-4" /> @{user?.username}
               </p>
 
-              <Badge className="mt-2">
+              <Badge className="mt-2 capitalize">
                 <LogIn className="w-3 h-3 mr-1" />
-                {user?.provider}
+                Login via {user?.provider}
               </Badge>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground flex gap-2">
             <Mail className="w-4 h-4" /> {user?.email}
           </p>
+
+          {/* 🔥 Button Chat */}
+          <Button
+            className="w-full mt-4"
+            onClick={() =>
+              (window.location.href = `/Rumpi/chat/${user?.username}`)
+            }
+          >
+            Start Chat
+          </Button>
         </CardContent>
       </Card>
     </div>
