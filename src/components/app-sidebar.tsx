@@ -55,7 +55,7 @@ const navData = {
     { title: "Home", url: "/Rumpi/Dashboard", icon: Home },
     { title: "Chat", url: "#", icon: MessageSquare },
     { title: "Upload", url: "#", icon: SquarePlus },
-    { title: "Profile", url: "#", icon: User },
+    { title: "Profile", url: "/Rumpi/profile/me", icon: User },
     { title: "Notifications", url: "#", icon: Bell },
     { title: "Settings", url: "#", icon: Settings2 },
   ],

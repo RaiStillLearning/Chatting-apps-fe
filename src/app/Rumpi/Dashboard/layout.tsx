@@ -43,7 +43,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/users/search?q=${query}`);
+      const res = await fetch(`${API_URL}/api/users/search?q=${query}`);
       const data = await res.json();
       setResults(data);
     } catch (err) {
@@ -99,7 +99,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
                   {results.map((user) => (
                     <Link
                       key={user._id}
-                      href={`/Profile/${user.username}`}
+                      href={`/Rumpi/profile/${user.username}`}
                       className="flex items-center gap-3 p-3 hover:bg-accent transition-colors"
                     >
                       <Image
@@ -212,7 +212,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
                 results.map((user) => (
                   <Link
                     key={user._id}
-                    href={`/Profile/${user.username}`}
+                    href={`/Rumpi/profile/${user.username}`}
                     className="flex items-center gap-3 p-3 border-b hover:bg-accent transition-colors rounded-lg"
                     onClick={() => setSearchOpen(false)}
                   >
