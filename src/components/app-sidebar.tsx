@@ -34,8 +34,8 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 const defaultUser = {
   name: "Guest",
@@ -70,8 +70,25 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState(defaultUser);
   const [isAuth, setIsAuth] = React.useState(false);
 
-  // CHAT LIST
-  const [chatList, setChatList] = React.useState<any[]>([]);
+  // ============================
+  // CHAT LIST TYPES
+  // ============================
+  type ChatListUser = {
+    _id: string;
+    displayName: string;
+    username: string;
+    avatarUrl?: string;
+  };
+
+  type ChatListItem = {
+    _id: string;
+    participants: ChatListUser[];
+    otherUser: ChatListUser;
+    lastMessage?: string;
+    updatedAt: string;
+  };
+
+  const [chatList, setChatList] = React.useState<ChatListItem[]>([]);
 
   // ============================
   // LOAD CURRENT USER
@@ -112,7 +129,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       });
 
       if (res.ok) {
-        setChatList(await res.json());
+        const list: ChatListItem[] = await res.json();
+        setChatList(list);
       }
     } catch (err) {
       console.error("Chat list error:", err);
@@ -133,7 +151,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       fetchChatList();
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect(); // cleanup valid
+    };
   }, []);
 
   // ============================
@@ -153,6 +173,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     }
   }
 
+  // ============================
+  // RENDER
+  // ============================
   return (
     <Sidebar
       collapsible="icon"
@@ -227,9 +250,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
         <Separator className="my-3" />
 
-        {/* =============================
-              ⭐ RECENT CHAT LIST ⭐
-        ============================== */}
+        {/* ⭐ RECENT CHAT LIST */}
         <SidebarGroup>
           <SidebarGroupContent>
             <p className="text-xs px-4 mb-2 text-muted-foreground group-data-[collapsed]/sidebar:hidden">
@@ -243,32 +264,44 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             )}
 
             <SidebarMenu>
-              {chatList.map((chat) => (
-                <SidebarMenuItem key={chat._id}>
-                  <SidebarMenuButton asChild tooltip={chat.displayName}>
-                    <Link
-                      href={`/Rumpi/chat/${chat.username}`}
-                      className="flex items-center gap-3"
-                    >
-                      <Image
-                        src={
-                          chat.avatarUrl || "/user-profile/default-avatar.png"
-                        }
-                        width={32}
-                        height={32}
-                        className="rounded-full object-cover"
-                        alt="avatar"
-                      />
-                      <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
-                        <span className="font-medium">{chat.displayName}</span>
-                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-                          {chat.lastMessage || "Mulai chat"}
-                        </span>
-                      </div>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {chatList.map((chat) => {
+                // defensive guard: jika Struktur backend berbeda atau otherUser undefined
+                const other = chat.otherUser ?? {
+                  _id: "",
+                  displayName: "Unknown",
+                  username: "",
+                  avatarUrl: "/user-profile/default-avatar.png",
+                };
+
+                return (
+                  <SidebarMenuItem key={chat._id}>
+                    <SidebarMenuButton asChild tooltip={other.displayName}>
+                      <Link href={`/Rumpi/chat/${other.username}`}>
+                        <Image
+                          src={
+                            other.avatarUrl ||
+                            "/user-profile/default-avatar.png"
+                          }
+                          width={32}
+                          height={32}
+                          className="rounded-full object-cover"
+                          alt="avatar"
+                        />
+
+                        <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
+                          <span className="font-medium">
+                            {other.displayName}
+                          </span>
+
+                          <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            {chat.lastMessage || "Mulai chat"}
+                          </span>
+                        </div>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

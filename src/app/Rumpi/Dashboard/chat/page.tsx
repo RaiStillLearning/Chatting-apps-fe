@@ -11,19 +11,21 @@ import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+type ChatParticipant = {
+  _id: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string;
+};
+
 type ChatListItem = {
   _id: string;
-  participants: {
-    _id: string;
-    username: string;
-    displayName: string;
-    avatarUrl?: string;
-  }[];
+  participants: ChatParticipant[];
   lastMessage?: {
     text: string;
     createdAt: string;
     sender: string;
-  };
+  } | null;
   unreadCount?: number;
 };
 
@@ -31,6 +33,8 @@ type CurrentUser = {
   _id: string;
   username: string;
   displayName: string;
+  email: string;
+  avatarUrl?: string;
 };
 
 export default function ChatListPage() {
@@ -39,51 +43,61 @@ export default function ChatListPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch current user
-  const loadCurrentUser = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/auth/me`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCurrentUser(data);
-      }
-    } catch (err) {
-      console.error("LOAD USER ERROR:", err);
-    }
-  };
-
-  // Fetch chat list
-  const loadChats = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/chat/list`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        setLoading(false);
-        return;
-      }
-
-      const data = await res.json();
-      setChats(data);
-      setLoading(false);
-    } catch (err) {
-      console.error("LOAD CHAT LIST ERROR:", err);
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadCurrentUser();
-    loadChats();
+    let isMounted = true;
 
-    // Poll for updates every 10 seconds
-    const interval = setInterval(() => {
-      loadChats();
+    const fetchInitial = async () => {
+      try {
+        // ambil user + chat list paralel
+        const [meRes, chatsRes] = await Promise.all([
+          fetch(`${API_URL}/api/auth/me`, {
+            credentials: "include",
+          }),
+          fetch(`${API_URL}/api/chat/list`, {
+            credentials: "include",
+          }),
+        ]);
+
+        if (!isMounted) return;
+
+        if (meRes.ok) {
+          const meData: CurrentUser = await meRes.json();
+          setCurrentUser(meData);
+        }
+
+        if (chatsRes.ok) {
+          const chatsData: ChatListItem[] = await chatsRes.json();
+          setChats(chatsData);
+        }
+      } catch (err) {
+        console.error("INIT CHAT PAGE ERROR:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchInitial();
+
+    // polling chat list tiap 10 detik
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/chat/list`, {
+          credentials: "include",
+        });
+
+        if (!res.ok || !isMounted) return;
+
+        const data: ChatListItem[] = await res.json();
+        setChats(data);
+      } catch (err) {
+        console.error("POLL CHAT LIST ERROR:", err);
+      }
     }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Get the other participant (not current user)
@@ -120,7 +134,7 @@ export default function ChatListPage() {
     return (
       otherUser.displayName.toLowerCase().includes(query) ||
       otherUser.username.toLowerCase().includes(query) ||
-      chat.lastMessage?.text.toLowerCase().includes(query)
+      chat.lastMessage?.text?.toLowerCase().includes(query)
     );
   });
 

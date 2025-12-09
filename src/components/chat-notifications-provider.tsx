@@ -5,6 +5,14 @@ import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
+type ChatNotification = {
+  senderId: string;
+  senderName: string;
+  senderUsername?: string;
+  avatarUrl?: string;
+  text: string;
+};
+
 export function ChatNotificationProvider({
   currentUserId,
 }: {
@@ -15,15 +23,14 @@ export function ChatNotificationProvider({
 
     socket.emit("register", currentUserId);
 
-    socket.on("chat:notification", (data) => {
-      // Jika user sedang ada di chat yang sama → jangan notif
+    const handler = (data: ChatNotification) => {
+      // Jika user sedang berada di chat yang sama → jangan notif
       if (
         window.location.pathname === `/Rumpi/Dashboard/chat/${data.senderId}`
       ) {
         return;
       }
 
-      // 🎉 SONNER CUSTOM NOTIFICATION
       toast.custom(() => (
         <div
           className="flex items-center gap-3 cursor-pointer"
@@ -44,9 +51,13 @@ export function ChatNotificationProvider({
           </div>
         </div>
       ));
-    });
+    };
 
-    return () => socket.off("chat:notification");
+    socket.on("chat:notification", handler);
+
+    return () => {
+      socket.off("chat:notification", handler);
+    };
   }, [currentUserId]);
 
   return null;

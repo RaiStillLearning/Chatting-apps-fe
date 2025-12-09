@@ -135,7 +135,10 @@ export default function ChatPage() {
         socket.emit("join_chat", chat._id);
 
         socket.on("new_message", (msg: MessageType) => {
-          setMessages((prev) => [...prev, msg]);
+          setMessages((prev) => {
+            if (prev.some((m) => m._id === msg._id)) return prev; // Cegah duplikat
+            return [...prev, msg];
+          });
         });
 
         setLoading(false);
