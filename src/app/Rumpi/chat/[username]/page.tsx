@@ -44,6 +44,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -57,26 +58,32 @@ export default function ChatPage() {
   useEffect(() => {
     const setupChat = async () => {
       try {
-        if (!username) return;
+        if (!username) {
+          setError("Username not found");
+          setLoading(false);
+          return;
+        }
 
         // 1. ambil current user
         const meRes = await fetch(`${API_URL}/api/auth/me`, {
           credentials: "include",
         });
         if (!meRes.ok) {
+          setError("Failed to authenticate");
           setLoading(false);
           return;
         }
-        const meData = await meRes.json();
+        const meData: UserType = await meRes.json();
         setMe(meData);
 
         // 2. ambil target user by username
         const targetRes = await fetch(`${API_URL}/api/users/${username}`);
         if (!targetRes.ok) {
+          setError("User not found");
           setLoading(false);
           return;
         }
-        const targetData = await targetRes.json();
+        const targetData: UserType = await targetRes.json();
         setTarget(targetData);
 
         // 3. start / get chat
@@ -87,7 +94,13 @@ export default function ChatPage() {
           body: JSON.stringify({ userId: targetData._id }),
         });
 
-        const chat = await chatRes.json();
+        if (!chatRes.ok) {
+          setError("Failed to start chat");
+          setLoading(false);
+          return;
+        }
+
+        const chat: { _id: string } = await chatRes.json();
         setChatId(chat._id);
 
         // 4. ambil messages
@@ -97,8 +110,22 @@ export default function ChatPage() {
             credentials: "include",
           }
         );
+
+        if (!msgRes.ok) {
+          setError("Failed to load messages");
+          setLoading(false);
+          return;
+        }
+
         const msgs = await msgRes.json();
-        setMessages(msgs);
+
+        // ✅ VALIDASI: Pastikan msgs adalah array
+        if (Array.isArray(msgs)) {
+          setMessages(msgs);
+        } else {
+          console.error("Messages is not an array:", msgs);
+          setMessages([]);
+        }
 
         // 5. setup socket.io
         socket = io(API_URL, {
@@ -114,6 +141,7 @@ export default function ChatPage() {
         setLoading(false);
       } catch (err) {
         console.error("CHAT INIT ERROR:", err);
+        setError("Failed to initialize chat");
         setLoading(false);
       }
     };
@@ -135,12 +163,16 @@ export default function ChatPage() {
 
     // kirim via REST (supaya pasti kesimpan di DB)
     try {
-      await fetch(`${API_URL}/api/chats/${chatId}/messages`, {
+      const response = await fetch(`${API_URL}/api/chats/${chatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ text }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
 
       setInput("");
       // realtime akan ditrigger dari socket 'new_message'
@@ -149,7 +181,7 @@ export default function ChatPage() {
     }
   };
 
-  if (loading || !target || !me) {
+  if (loading) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <Skeleton className="h-10 w-40 mb-4" />
@@ -158,6 +190,30 @@ export default function ChatPage() {
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-4 w-2/3" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-destructive font-medium">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!target || !me) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">Chat not found</p>
           </CardContent>
         </Card>
       </div>
@@ -175,7 +231,7 @@ export default function ChatPage() {
       <div className="flex items-center gap-3">
         <Avatar>
           {target.avatarUrl ? (
-            <AvatarImage src={target.avatarUrl} />
+            <AvatarImage src={target.avatarUrl} alt={target.displayName} />
           ) : (
             <AvatarFallback>{targetInitial}</AvatarFallback>
           )}
@@ -196,40 +252,49 @@ export default function ChatPage() {
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col p-3 overflow-y-auto gap-2">
-          {messages.map((msg) => {
-            const mine = isMe(msg.sender._id);
-            return (
-              <div
-                key={msg._id}
-                className={cn(
-                  "flex w-full",
-                  mine ? "justify-end" : "justify-start"
-                )}
-              >
+          {/* ✅ VALIDASI: Pastikan messages adalah array sebelum map */}
+          {Array.isArray(messages) && messages.length > 0 ? (
+            messages.map((msg) => {
+              const mine = isMe(msg.sender._id);
+              return (
                 <div
+                  key={msg._id}
                   className={cn(
-                    "max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                    mine
-                      ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-muted text-foreground rounded-bl-none"
+                    "flex w-full",
+                    mine ? "justify-end" : "justify-start"
                   )}
                 >
-                  {!mine && (
-                    <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-                      {msg.sender.displayName}
+                  <div
+                    className={cn(
+                      "max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                      mine
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-muted text-foreground rounded-bl-none"
+                    )}
+                  >
+                    {!mine && (
+                      <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
+                        {msg.sender.displayName}
+                      </p>
+                    )}
+                    <p>{msg.text}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                      {new Date(msg.createdAt).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
-                  )}
-                  <p>{msg.text}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                    {new Date(msg.createdAt).toLocaleTimeString("id-ID", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-muted-foreground text-sm">
+                No messages yet. Start the conversation!
+              </p>
+            </div>
+          )}
 
           <div ref={bottomRef} />
         </CardContent>
@@ -248,7 +313,9 @@ export default function ChatPage() {
             }
           }}
         />
-        <Button onClick={handleSend}>Send</Button>
+        <Button onClick={handleSend} disabled={!input.trim()}>
+          Send
+        </Button>
       </div>
     </div>
   );
