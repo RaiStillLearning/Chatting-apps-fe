@@ -26,6 +26,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import {
+  NotificationBusProvider,
+  useNotificationBus,
+} from "@/components/notification-bus-provider"; // ⭐ UPDATED
+import { Toaster } from "@/components/ui/sonner"; // ⭐ ADDED
 
 // 🎯 Type definitions
 type UserType = {
@@ -71,6 +76,14 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+  // ⭐ ADDED — get notifications from WebSocket
+  const bus = useNotificationBus();
+  const notifications = bus?.notifications ?? [];
+  useEffect(() => {
+    setUnreadNotificationsCount(notifications.length);
+    fetchChats(); // refresh unread chat badge
+  }, [notifications]);
+
   // Mobile Navigation Items
   const mobileNavItems: MobileNavItem[] = [
     {
@@ -84,6 +97,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
       icon: MessageCircle,
       href: "/Rumpi/messages",
       isActive: pathname.startsWith("/Rumpi/messages"),
+      badge: unreadMessagesCount, // ⭐ UPDATED
     },
     {
       title: "Create",
@@ -100,8 +114,8 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
     {
       title: "Profile",
       icon: User,
-      href: "/Rumpi/profile/me",
-      isActive: pathname.startsWith("/Rumpi/profile/me"),
+      href: "/Rumpi/Dashboard/profile/me",
+      isActive: pathname.startsWith("/Rumpi/Dashboard/profile/me"),
     },
   ];
 
@@ -138,7 +152,6 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
 
     return () => clearTimeout(delay);
   }, [searchQuery]);
-
   // -------------------------------
   // FETCH CHAT LIST & COUNT UNREAD
   // -------------------------------
@@ -187,7 +200,6 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
     fetchChats();
     fetchNotifications();
   }, []);
-
   // -------------------------------
   // SOCKET LISTEN FOR UPDATES
   // -------------------------------
@@ -248,7 +260,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
                   {results.map((user) => (
                     <Link
                       key={user._id}
-                      href={`/Rumpi/profile/${user.username}`}
+                      href={`/Rumpi/Dashboard/profile/${user.username}`}
                       className="flex items-center gap-3 p-3 hover:bg-accent transition-colors"
                       onClick={() => setSearchQuery("")}
                     >
@@ -342,7 +354,7 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
                   {results.map((user) => (
                     <Link
                       key={user._id}
-                      href={`/Rumpi/profile/${user.username}`}
+                      href={`/Rumpi/Dashboard/profile/${user.username}`}
                       className="flex items-center gap-3 p-4 hover:bg-accent transition-colors"
                       onClick={handleCloseSearch}
                     >
@@ -428,5 +440,21 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
 }
 
 export default function RumpiLayout({ children }: { children: ReactNode }) {
-  return <RumpiInnerLayout>{children}</RumpiInnerLayout>;
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((u) => setUserId(u._id))
+      .catch(() => setUserId(null));
+  }, []);
+
+  if (!userId) return <RumpiInnerLayout>{children}</RumpiInnerLayout>;
+
+  return (
+    <NotificationBusProvider currentUserId={userId}>
+      <Toaster richColors />
+      <RumpiInnerLayout>{children}</RumpiInnerLayout>
+    </NotificationBusProvider>
+  );
 }

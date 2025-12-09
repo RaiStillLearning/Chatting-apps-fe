@@ -46,10 +46,14 @@ const defaultUser = {
 const navData = {
   navMain: [
     { title: "Home", url: "/Rumpi/Dashboard", icon: Home },
-    { title: "Chat", url: "/Rumpi/chat", icon: MessageSquare },
+    { title: "Chat", url: "/Rumpi/Dashboard/chat", icon: MessageSquare },
     { title: "Upload", url: "#", icon: SquarePlus },
-    { title: "Profile", url: "/Rumpi/profile/me", icon: User },
-    { title: "Notifications", url: "#", icon: Bell },
+    { title: "Profile", url: "/Rumpi/Dashboard/profile/me", icon: User },
+    {
+      title: "Notifications",
+      url: "/Rumpi/Dashboard/notifications",
+      icon: Bell,
+    },
     { title: "Settings", url: "#", icon: Settings2 },
   ],
 

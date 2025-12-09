@@ -120,7 +120,7 @@ export default function ProfilePage() {
           <Button
             className="w-full mt-4"
             onClick={() =>
-              (window.location.href = `/Rumpi/chat/${user?.username}`)
+              (window.location.href = `/Rumpi/Dashboard/chat/${user?.username}`)
             }
           >
             Start Chat

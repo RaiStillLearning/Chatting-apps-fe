@@ -187,7 +187,7 @@ export default function ChatListPage() {
 
           return (
             <Link
-              href={`/Rumpi/chat/${otherUser.username}`}
+              href={`/Rumpi/Dashboard/chat/${otherUser.username}`}
               key={chat._id}
               className="block"
             >
