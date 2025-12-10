@@ -81,7 +81,7 @@ export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
               disabled={loading}
             >
               {/* ⭐ FIX: Pakai proxy route untuk Google auth */}
-              <a href="/api/auth/google?redirect=/Rumpi/Dashboard">
+              <a href="/api/auth/google/callback?redirect=/Rumpi/Dashboard">
                 Login with Google
               </a>
             </Button>
