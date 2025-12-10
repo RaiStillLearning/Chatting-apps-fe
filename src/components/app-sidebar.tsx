@@ -56,12 +56,6 @@ const navData = {
     },
     { title: "Settings", url: "#", icon: Settings2 },
   ],
-
-  projects: [
-    { name: "My Collections", url: "#", icon: Frame },
-    { name: "Saved Posts", url: "#", icon: PieChart },
-    { name: "Discover", url: "#", icon: Map },
-  ],
 };
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
@@ -225,88 +219,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
         <Separator className="my-2" />
-
-        {/* PROJECT NAV */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navData.projects.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild tooltip={item.name}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span className="lg:group-data-[state=collapsed]/sidebar:hidden">
-                        {item.name}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <Separator className="my-3" />
-
-        {/* ⭐ RECENT CHAT LIST */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <p className="text-xs px-4 mb-2 text-muted-foreground group-data-[collapsed]/sidebar:hidden">
-              Recent Chats
-            </p>
-
-            {chatList.length === 0 && (
-              <p className="text-xs px-4 text-muted-foreground group-data-[collapsed]/sidebar:hidden">
-                Belum ada chat
-              </p>
-            )}
-
-            <SidebarMenu>
-              {chatList.map((chat) => {
-                // defensive guard: jika Struktur backend berbeda atau otherUser undefined
-                const other = chat.otherUser ?? {
-                  _id: "",
-                  displayName: "Unknown",
-                  username: "",
-                  avatarUrl: "/user-profile/default-avatar.png",
-                };
-
-                return (
-                  <SidebarMenuItem key={chat._id}>
-                    <SidebarMenuButton asChild tooltip={other.displayName}>
-                      <Link href={`/Rumpi/chat/${other.username}`}>
-                        <Image
-                          src={
-                            other.avatarUrl ||
-                            "/user-profile/default-avatar.png"
-                          }
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
-                          alt="avatar"
-                        />
-
-                        <div className="flex flex-col gap-0.5 leading-none lg:group-data-[state=collapsed]/sidebar:hidden">
-                          <span className="font-medium">
-                            {other.displayName}
-                          </span>
-
-                          <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {chat.lastMessage || "Mulai chat"}
-                          </span>
-                        </div>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
-
       {/* FOOTER */}
       <SidebarFooter>
         <SidebarMenu>

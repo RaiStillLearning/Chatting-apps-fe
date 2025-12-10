@@ -89,15 +89,14 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
     {
       title: "Home",
       icon: Home,
-      href: "/Rumpi",
+      href: "/Rumpi/Dashboard",
       isActive: pathname === "/Rumpi",
     },
     {
-      title: "Messages",
+      title: "Chat",
       icon: MessageCircle,
-      href: "/Rumpi/messages",
-      isActive: pathname.startsWith("/Rumpi/messages"),
-      badge: unreadMessagesCount, // ⭐ UPDATED
+      href: "/Rumpi/Dashboard/chat",
+      isActive: pathname.startsWith("/Rumpi/Dashboard/chat"),
     },
     {
       title: "Create",
