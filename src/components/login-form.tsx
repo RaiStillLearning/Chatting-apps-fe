@@ -80,13 +80,14 @@ export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
               asChild
               disabled={loading}
             >
-              <a href="https://chatting-apps-be.up.railway.app/api/auth/google?redirect=/Rumpi/Dashboard">
+              {/* ⭐ FIX: Pakai proxy route untuk Google auth */}
+              <a href="/api/auth/google?redirect=/Rumpi/Dashboard">
                 Login with Google
               </a>
             </Button>
 
             <FieldDescription className="text-center text-sm">
-              Don’t have an account?{" "}
+              Don`t have an account?{" "}
               <a
                 href="/Auth/Signup"
                 className="font-medium hover:underline underline-offset-4"
