@@ -1,37 +1,39 @@
 // app/api/[...path]/route.ts
 // Proxy semua request ke backend Railway
+// Compatible with Next.js 15+
 
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL || "https://chatting-apps-be.up.railway.app";
+const NEXT_PUBLIC_API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params.path, "GET");
+type RouteContext = {
+  params: Promise<{ path: string[] }>;
+};
+
+export async function GET(request: NextRequest, context: RouteContext) {
+  const { path } = await context.params;
+  return proxyRequest(request, path, "GET");
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params.path, "POST");
+export async function POST(request: NextRequest, context: RouteContext) {
+  const { path } = await context.params;
+  return proxyRequest(request, path, "POST");
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params.path, "PUT");
+export async function PUT(request: NextRequest, context: RouteContext) {
+  const { path } = await context.params;
+  return proxyRequest(request, path, "PUT");
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params.path, "DELETE");
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const { path } = await context.params;
+  return proxyRequest(request, path, "DELETE");
+}
+
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  const { path } = await context.params;
+  return proxyRequest(request, path, "PATCH");
 }
 
 async function proxyRequest(
@@ -40,7 +42,7 @@ async function proxyRequest(
   method: string
 ) {
   const path = pathParts.join("/");
-  const url = `${BACKEND_URL}/${path}`;
+  const url = `${NEXT_PUBLIC_API_URL}/${path}${request.nextUrl.search}`;
 
   console.log(`🔄 Proxying ${method} ${url}`);
 
@@ -50,7 +52,14 @@ async function proxyRequest(
     if (method !== "GET" && method !== "DELETE") {
       const contentType = request.headers.get("content-type");
       if (contentType?.includes("application/json")) {
-        body = JSON.stringify(await request.json());
+        try {
+          body = JSON.stringify(await request.json());
+        } catch {
+          // Body might be empty
+          body = undefined;
+        }
+      } else if (contentType?.includes("multipart/form-data")) {
+        body = await request.formData();
       } else {
         body = await request.text();
       }
@@ -62,42 +71,55 @@ async function proxyRequest(
       headers: {
         "Content-Type":
           request.headers.get("content-type") || "application/json",
-        // Forward cookies from browser
         Cookie: request.headers.get("cookie") || "",
       },
-      body,
+      body: body instanceof FormData ? body : body,
       credentials: "include",
     });
 
     // Get response data
-    const data = await backendRes.text();
+    const contentType = backendRes.headers.get("content-type");
+    let data: string | ArrayBuffer;
+
+    if (contentType?.includes("application/json")) {
+      data = await backendRes.text();
+    } else {
+      data = await backendRes.arrayBuffer();
+    }
 
     // Create response
     const response = new NextResponse(data, {
       status: backendRes.status,
       headers: {
-        "Content-Type":
-          backendRes.headers.get("content-type") || "application/json",
+        "Content-Type": contentType || "application/json",
       },
     });
 
-    // Forward Set-Cookie headers from backend to browser
-    const setCookie = backendRes.headers.get("set-cookie");
-    if (setCookie) {
-      // Remove sameSite=none and secure from backend cookie
-      // because same-origin doesn't need them
-      const cleanCookie = setCookie
-        .replace(/; SameSite=None/gi, "")
-        .replace(/; Secure/gi, "");
+    // Forward Set-Cookie headers from backend
+    const setCookieHeaders = backendRes.headers.getSetCookie?.() || [];
 
-      response.headers.set("Set-Cookie", cleanCookie);
+    if (setCookieHeaders.length > 0) {
+      // Process each cookie
+      setCookieHeaders.forEach((cookie) => {
+        // Keep the cookie as-is since we're same-origin now
+        response.headers.append("Set-Cookie", cookie);
+      });
+    } else {
+      // Fallback for older fetch implementations
+      const setCookie = backendRes.headers.get("set-cookie");
+      if (setCookie) {
+        response.headers.set("Set-Cookie", setCookie);
+      }
     }
 
     return response;
   } catch (error) {
     console.error("❌ Proxy error:", error);
     return NextResponse.json(
-      { error: "Proxy request failed" },
+      {
+        error: "Proxy request failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
