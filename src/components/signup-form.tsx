@@ -116,7 +116,7 @@ export function SignupForm({
                 asChild
                 disabled={loading}
               >
-                <a href="http://localhost:5000/api/auth/google?redirect=/Rumpi/Dashboard">
+                <a href="https://chatting-apps-be.up.railway.app/api/auth/google?redirect=/Rumpi/Dashboard">
                   Sign up with Google
                 </a>
               </Button>
