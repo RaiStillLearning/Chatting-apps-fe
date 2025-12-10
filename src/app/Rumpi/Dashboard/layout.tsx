@@ -442,9 +442,14 @@ export default function RumpiLayout({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((u) => setUserId(u._id))
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+      credentials: "include",
+    })
+      .then(async (res) => {
+        if (!res.ok) return setUserId(null);
+        const u = await res.json();
+        setUserId(u._id);
+      })
       .catch(() => setUserId(null));
   }, []);
 
