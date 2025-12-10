@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useCallback } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -16,12 +16,6 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -29,8 +23,8 @@ import { cn } from "@/lib/utils";
 import {
   NotificationBusProvider,
   useNotificationBus,
-} from "@/components/notification-bus-provider"; // ⭐ UPDATED
-import { Toaster } from "@/components/ui/sonner"; // ⭐ ADDED
+} from "@/components/notification-bus-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 // 🎯 Type definitions
 type UserType = {
@@ -76,27 +70,25 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  // ⭐ ADDED — get notifications from WebSocket
+  // ⭐ Get notifications (via NotificationBus)
   const bus = useNotificationBus();
   const notifications = bus?.notifications ?? [];
-  useEffect(() => {
-    setUnreadNotificationsCount(notifications.length);
-    fetchChats(); // refresh unread chat badge
-  }, [notifications]);
 
-  // Mobile Navigation Items
+  // Mobile Navigation Items (STRUKTUR TETAP)
   const mobileNavItems: MobileNavItem[] = [
     {
       title: "Home",
       icon: Home,
       href: "/Rumpi/Dashboard",
-      isActive: pathname === "/Rumpi",
+      isActive: pathname === "/Rumpi/Dashboard" || pathname === "/Rumpi", // 🔧 FIX: aktif di dashboard
+      badge: undefined,
     },
     {
       title: "Chat",
       icon: MessageCircle,
       href: "/Rumpi/Dashboard/chat",
       isActive: pathname.startsWith("/Rumpi/Dashboard/chat"),
+      badge: unreadMessagesCount || undefined, // pakai total unread kalau ada
     },
     {
       title: "Create",
@@ -121,96 +113,112 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
   // -------------------------------
   // SEARCH PEOPLE
   // -------------------------------
-  const searchPeople = async (query: string): Promise<void> => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `${API_URL}/api/users/search?q=${encodeURIComponent(query)}`
-      );
-
-      if (!res.ok) {
-        throw new Error("Search failed");
+  const searchPeople = useCallback(
+    async (query: string): Promise<void> => {
+      if (!query.trim()) {
+        setResults([]);
+        return;
       }
 
-      const data: UserType[] = await res.json();
-      setResults(data);
-    } catch (err) {
-      console.error("Search error:", err);
-      setResults([]);
-    }
-  };
+      try {
+        const res = await fetch(
+          `${API_URL}/api/users/search?q=${encodeURIComponent(query)}`,
+          {
+            credentials: "include", // biar ikut cookie kalau dibutuhkan
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Search failed");
+        }
+
+        const data: UserType[] = await res.json();
+        setResults(data);
+      } catch (err) {
+        console.error("Search error:", err);
+        setResults([]);
+      }
+    },
+    [API_URL]
+  );
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      searchPeople(searchQuery);
+      if (searchQuery.trim()) {
+        searchPeople(searchQuery);
+      } else {
+        setResults([]);
+      }
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchQuery]);
+  }, [searchQuery, searchPeople]);
+
   // -------------------------------
   // FETCH CHAT LIST & COUNT UNREAD
   // -------------------------------
-  const fetchChats = async (): Promise<void> => {
+  const fetchChats = useCallback(async (): Promise<void> => {
     try {
       const res = await fetch(`${API_URL}/api/chat/list`, {
         credentials: "include",
       });
 
-      if (res.ok) {
-        const data: ChatType[] = await res.json();
-        setChatList(data);
+      if (!res.ok) return;
 
-        // Count total unread messages
-        const totalUnread = data.reduce(
-          (sum, chat) => sum + (chat.unreadCount || 0),
-          0
-        );
-        setUnreadMessagesCount(totalUnread);
-      }
+      const data: ChatType[] = await res.json();
+      setChatList(data);
+
+      const totalUnread = data.reduce(
+        (sum, chat) => sum + (chat.unreadCount || 0),
+        0
+      );
+      setUnreadMessagesCount(totalUnread);
     } catch (err) {
       console.error("FETCH CHAT LIST ERROR:", err);
     }
-  };
+  }, [API_URL]);
 
   // -------------------------------
   // FETCH NOTIFICATIONS COUNT
   // -------------------------------
-  const fetchNotifications = async (): Promise<void> => {
+  const fetchNotifications = useCallback(async (): Promise<void> => {
     try {
       const res = await fetch(`${API_URL}/api/notifications`, {
         credentials: "include",
       });
 
-      if (res.ok) {
-        const data: NotificationType[] = await res.json();
-        const unreadCount = data.filter((notif) => !notif.read).length;
-        setUnreadNotificationsCount(unreadCount);
-      }
+      if (!res.ok) return;
+
+      const data: NotificationType[] = await res.json();
+      const unreadCount = data.filter((notif) => !notif.read).length;
+      setUnreadNotificationsCount(unreadCount);
     } catch (err) {
       console.error("FETCH NOTIFICATIONS ERROR:", err);
     }
-  };
+  }, [API_URL]);
 
+  // Initial load
   useEffect(() => {
     fetchChats();
     fetchNotifications();
-  }, []);
-  // -------------------------------
-  // SOCKET LISTEN FOR UPDATES
-  // -------------------------------
+  }, [fetchChats, fetchNotifications]);
+
+  // Update notif count when bus notifs berubah
   useEffect(() => {
-    // Polling fallback (remove when socket.io is set up)
+    setUnreadNotificationsCount(notifications.length);
+    // optional: refresh chats untuk sync badge
+    fetchChats();
+  }, [notifications, fetchChats]);
+
+  // Polling fallback
+  useEffect(() => {
     const interval = setInterval(() => {
       fetchChats();
       fetchNotifications();
-    }, 30000); // Poll every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [API_URL]);
+  }, [fetchChats, fetchNotifications]);
 
   // Clear search when closing
   const handleCloseSearch = () => {
@@ -440,9 +448,10 @@ function RumpiInnerLayout({ children }: { children: ReactNode }) {
 
 export default function RumpiLayout({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+    fetch(`${API_URL}/api/auth/me`, {
       credentials: "include",
     })
       .then(async (res) => {
@@ -451,9 +460,11 @@ export default function RumpiLayout({ children }: { children: ReactNode }) {
         setUserId(u._id);
       })
       .catch(() => setUserId(null));
-  }, []);
+  }, [API_URL]);
 
-  if (!userId) return <RumpiInnerLayout>{children}</RumpiInnerLayout>;
+  if (!userId) {
+    return <RumpiInnerLayout>{children}</RumpiInnerLayout>;
+  }
 
   return (
     <NotificationBusProvider currentUserId={userId}>
