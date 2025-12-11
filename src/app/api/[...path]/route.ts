@@ -3,46 +3,49 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// Next.js 16 expects:
-// params: Promise<{ path: string[] }>
+// *** FINAL VALID SIGNATURE FOR NEXT 16 ***
+interface RouteParams {
+  path: string[];
+}
+
 export async function GET(
   req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
+  ctx: { params: Promise<RouteParams> }
 ) {
-  const params = await ctx.params;
-  return proxy(req, params.path, "GET");
+  const { path } = await ctx.params;
+  return proxy(req, path, "GET");
 }
 
 export async function POST(
   req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
+  ctx: { params: Promise<RouteParams> }
 ) {
-  const params = await ctx.params;
-  return proxy(req, params.path, "POST");
+  const { path } = await ctx.params;
+  return proxy(req, path, "POST");
 }
 
 export async function PUT(
   req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
+  ctx: { params: Promise<RouteParams> }
 ) {
-  const params = await ctx.params;
-  return proxy(req, params.path, "PUT");
+  const { path } = await ctx.params;
+  return proxy(req, path, "PUT");
 }
 
 export async function DELETE(
   req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
+  ctx: { params: Promise<RouteParams> }
 ) {
-  const params = await ctx.params;
-  return proxy(req, params.path, "DELETE");
+  const { path } = await ctx.params;
+  return proxy(req, path, "DELETE");
 }
 
 export async function PATCH(
   req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
+  ctx: { params: Promise<RouteParams> }
 ) {
-  const params = await ctx.params;
-  return proxy(req, params.path, "PATCH");
+  const { path } = await ctx.params;
+  return proxy(req, path, "PATCH");
 }
 
 // --------------------------
@@ -56,10 +59,9 @@ async function proxy(
   const fullPath = pathParts.join("/");
   const backendURL = `${API_URL}/${fullPath}${request.nextUrl.search}`;
 
-  console.log(`🔁 PROXY → ${method} ${backendURL}`);
+  console.log(`🔁 PROXY -> ${method} ${backendURL}`);
 
-  // BODY HANDLING
-  let body: BodyInit | undefined = undefined;
+  let body: BodyInit | undefined;
   const contentType = request.headers.get("content-type") || "";
 
   if (!["GET", "DELETE"].includes(method)) {
@@ -72,34 +74,31 @@ async function proxy(
     }
   }
 
-  const backendRes = await fetch(backendURL, {
+  const backend = await fetch(backendURL, {
     method,
+    credentials: "include",
+    body,
     headers: {
       "Content-Type": contentType,
       Cookie: request.headers.get("cookie") || "",
     },
-    credentials: "include",
-    body,
   });
 
-  const responseText = await backendRes.text();
-  const resType = backendRes.headers.get("content-type") || "text/plain";
+  const text = await backend.text();
+  const type = backend.headers.get("content-type") || "text/plain";
 
-  const response = new NextResponse(responseText, {
-    status: backendRes.status,
-    headers: {
-      "Content-Type": resType,
-    },
+  const res = new NextResponse(text, {
+    status: backend.status,
+    headers: { "Content-Type": type },
   });
 
-  const cookieHeaders =
-    backendRes.headers.getSetCookie?.() ||
-    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ||
+  // Forward ALL cookies
+  const cookies =
+    backend.headers.getSetCookie?.() ||
+    backend.headers.get("set-cookie")?.split(/,(?=[^;]+=)/) ||
     [];
 
-  cookieHeaders.forEach((cookie) => {
-    response.headers.append("Set-Cookie", cookie);
-  });
+  cookies.forEach((ck) => res.headers.append("Set-Cookie", ck));
 
-  return response;
+  return res;
 }
