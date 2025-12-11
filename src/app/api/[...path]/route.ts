@@ -3,94 +3,103 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// ✔ Next.js 16 VALID signature — TANPA type alias!
+// Next.js v16 dynamic API route → params MUST be Promise
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await context.params;
-  return proxy(request, path, "GET");
+  const { path } = await ctx.params;
+  return proxy(req, path);
 }
-
 export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await context.params;
-  return proxy(request, path, "POST");
+  const { path } = await ctx.params;
+  return proxy(req, path);
 }
-
 export async function PUT(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await context.params;
-  return proxy(request, path, "PUT");
+  const { path } = await ctx.params;
+  return proxy(req, path);
 }
-
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await context.params;
-  return proxy(request, path, "DELETE");
-}
-
 export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await context.params;
-  return proxy(request, path, "PATCH");
+  const { path } = await ctx.params;
+  return proxy(req, path);
+}
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await ctx.params;
+  return proxy(req, path);
 }
 
-// ---------------------------------
-// REAL PROXY FUNCTION
-// ---------------------------------
-async function proxy(request: NextRequest, pathList: string[], method: string) {
-  const fullPath = pathList.join("/");
-  const target = `${API_URL}/${fullPath}${request.nextUrl.search}`;
+// -----------------------------------------------------------
+// ⭐ PROXY FUNCTION (TANPA ANY)
+// -----------------------------------------------------------
+async function proxy(req: NextRequest, path: string[]) {
+  const method = req.method;
+  const backendURL = `${API_URL}/${path.join("/")}${req.nextUrl.search}`;
 
-  console.log(`🔁 PROXY → ${method} ${target}`);
+  console.log(`🔁 PROXY → ${method} ${backendURL}`);
 
-  const contentType = request.headers.get("content-type") || "";
-  let body: BodyInit | undefined = undefined;
+  const contentType = req.headers.get("content-type") ?? "";
+
+  // -----------------------
+  // ⭐ FIX: No-any body type
+  // -----------------------
+  let body: string | FormData | undefined = undefined;
 
   if (!["GET", "DELETE"].includes(method)) {
     if (contentType.includes("application/json")) {
-      body = await request.text();
+      body = await req.text(); // JSON string persis
     } else if (contentType.includes("form-data")) {
-      body = await request.formData();
+      body = await req.formData();
     } else {
-      body = await request.text();
+      body = await req.text();
     }
   }
 
-  const backend = await fetch(target, {
+  // -----------------------
+  // SEND REQUEST KE BACKEND
+  // -----------------------
+  const backendRes = await fetch(backendURL, {
     method,
-    body,
     credentials: "include",
+    body,
     headers: {
-      Cookie: request.headers.get("cookie") || "",
       "Content-Type": contentType,
+      Cookie: req.headers.get("cookie") ?? "",
     },
   });
 
-  const text = await backend.text();
-  const responseType = backend.headers.get("content-type") || "text/plain";
+  const raw = await backendRes.text();
+  const type = backendRes.headers.get("content-type") ?? "text/plain";
 
-  const response = new NextResponse(text, {
-    status: backend.status,
-    headers: { "Content-Type": responseType },
+  const nextRes = new NextResponse(raw, {
+    status: backendRes.status,
+    headers: {
+      "Content-Type": type,
+    },
   });
 
-  // ⭐ FORWARD COOKIES
+  // -----------------------------------
+  // ⭐ FIX PALING PENTING — SET-COOKIE
+  // -----------------------------------
   const cookies =
-    backend.headers.getSetCookie?.() ||
-    backend.headers.get("set-cookie")?.split(/,(?=[^;]+=)/) ||
+    backendRes.headers.getSetCookie?.() ??
+    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ??
     [];
 
-  cookies.forEach((c) => response.headers.append("Set-Cookie", c));
+  for (const cookie of cookies) {
+    nextRes.headers.append("Set-Cookie", cookie);
+  }
 
-  return response;
+  return nextRes;
 }
