@@ -6,9 +6,9 @@ export async function GET(req: NextRequest) {
   const redirect =
     req.nextUrl.searchParams.get("redirect") || "/Rumpi/Dashboard";
 
-  // Redirect browser ke backend Google login
+  // Redirect proxy ke callback backend
   return NextResponse.redirect(
-    `${API_URL}/api/auth/google?redirect=${redirect}`,
+    `${API_URL}/api/auth/google/callback?redirect=${redirect}`,
     { status: 307 }
   );
 }
