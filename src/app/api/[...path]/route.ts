@@ -3,25 +3,60 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// ✔ FIX: params harus Promise<{ path: string[] }>
-type Context = {
-  params: Promise<{ path: string[] }>;
-};
-
-async function handler(request: NextRequest, context: Context) {
-  // ✔ FIX: menunggu Promise params
+// ✔ Next.js 16 VALID signature — TANPA type alias!
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   const { path } = await context.params;
+  return proxy(request, path, "GET");
+}
 
-  const fullPath = path.join("/");
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await context.params;
+  return proxy(request, path, "POST");
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await context.params;
+  return proxy(request, path, "PUT");
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await context.params;
+  return proxy(request, path, "DELETE");
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await context.params;
+  return proxy(request, path, "PATCH");
+}
+
+// ---------------------------------
+// REAL PROXY FUNCTION
+// ---------------------------------
+async function proxy(request: NextRequest, pathList: string[], method: string) {
+  const fullPath = pathList.join("/");
   const target = `${API_URL}/${fullPath}${request.nextUrl.search}`;
 
-  console.log(`🔁 PROXY → ${request.method} ${target}`);
+  console.log(`🔁 PROXY → ${method} ${target}`);
 
-  // BODY HANDLING
   const contentType = request.headers.get("content-type") || "";
   let body: BodyInit | undefined = undefined;
 
-  if (!["GET", "DELETE"].includes(request.method)) {
+  if (!["GET", "DELETE"].includes(method)) {
     if (contentType.includes("application/json")) {
       body = await request.text();
     } else if (contentType.includes("form-data")) {
@@ -31,39 +66,31 @@ async function handler(request: NextRequest, context: Context) {
     }
   }
 
-  // PROXY REQUEST -> Backend
-  const backendRes = await fetch(target, {
-    method: request.method,
-    credentials: "include",
+  const backend = await fetch(target, {
+    method,
     body,
+    credentials: "include",
     headers: {
-      "Content-Type": contentType,
       Cookie: request.headers.get("cookie") || "",
+      "Content-Type": contentType,
     },
   });
 
-  const raw = await backendRes.text();
-  const type = backendRes.headers.get("content-type") || "text/plain";
+  const text = await backend.text();
+  const responseType = backend.headers.get("content-type") || "text/plain";
 
-  const res = new NextResponse(raw, {
-    status: backendRes.status,
-    headers: { "Content-Type": type },
+  const response = new NextResponse(text, {
+    status: backend.status,
+    headers: { "Content-Type": responseType },
   });
 
-  const setCookies =
-    backendRes.headers.getSetCookie?.() ||
-    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=)/) ||
+  // ⭐ FORWARD COOKIES
+  const cookies =
+    backend.headers.getSetCookie?.() ||
+    backend.headers.get("set-cookie")?.split(/,(?=[^;]+=)/) ||
     [];
 
-  setCookies.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
+  cookies.forEach((c) => response.headers.append("Set-Cookie", c));
 
-  return res;
+  return response;
 }
-
-export {
-  handler as GET,
-  handler as POST,
-  handler as PUT,
-  handler as DELETE,
-  handler as PATCH,
-};
