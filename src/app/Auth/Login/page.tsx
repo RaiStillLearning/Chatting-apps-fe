@@ -24,8 +24,8 @@ export default function LoginPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           credentials: "include", // wajib untuk session
+          headers: { "Content-Type": "application/json" },  
           body: JSON.stringify({ email, password }),
         }
       );
@@ -64,4 +64,3 @@ export default function LoginPage() {
     </div>
   );
 }
-  
