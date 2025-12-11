@@ -80,9 +80,7 @@ export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
               asChild
               disabled={loading}
             >
-              <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google?redirect=/Rumpi/Dashboard`}
-              >
+              <a href="/api/auth/google?redirect=/Rumpi/Dashboard">
                 Login with Google
               </a>
             </Button>
