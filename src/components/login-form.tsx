@@ -80,7 +80,6 @@ export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
               asChild
               disabled={loading}
             >
-              {/* ⭐ FIX: Pakai proxy route untuk Google auth */}
               <a
                 href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google?redirect=/Rumpi/Dashboard`}
               >

@@ -18,49 +18,39 @@ export default function LoginPage() {
     const email = form.get("email");
     const password = form.get("password");
 
-    console.log("🔐 Attempting login via proxy...");
-
     try {
-      // ⭐ Sekarang pakai path relatif /api karena proxy
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Still needed untuk cookie
-        body: JSON.stringify({ email, password }),
-      });
-
-      console.log("📡 Response status:", res.status);
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log("✅ Login success:", data);
-
-        // Verify session
-        const verifyRes = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-
-        console.log("🔍 Verify session:", verifyRes.status);
-
-        if (verifyRes.ok) {
-          console.log("✅ Session verified, redirecting...");
-          router.replace("/Rumpi/Dashboard");
-        } else {
-          setError("Session gagal dibuat. Silakan coba lagi.");
+      // 🔥 LOGIN LANGSUNG KE BACKEND TANPA PROXY
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // wajib untuk session
+          body: JSON.stringify({ email, password }),
         }
-      } else {
-        const errorData = await res.json();
-        setError(errorData.message || "Login gagal");
-        console.error("❌ Login failed:", errorData);
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        return setError(err.message || "Login gagal");
       }
+
+      // 🔥 CEK SESSION MENGGUNAKAN BACKEND LANGSUNG
+      const verify = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
+        { credentials: "include" }
+      );
+
+      if (!verify.ok) {
+        return setError("Session gagal. Silakan login ulang.");
+      }
+
+      router.replace("/Rumpi/Dashboard");
     } catch (err) {
-      console.error("❌ Login error:", err);
       setError("Terjadi kesalahan koneksi");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   }
 
   return (
@@ -74,3 +64,4 @@ export default function LoginPage() {
     </div>
   );
 }
+  
