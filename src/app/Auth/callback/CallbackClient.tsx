@@ -13,9 +13,8 @@ export default function CallbackPage() {
   const errorParam = params.get("error");
 
   useEffect(() => {
-    // Handle error dari backend
     if (errorParam) {
-      setTimeout(() => router.replace("/Auth/Login"), 2000);
+      router.replace("/Auth/Login");
       return;
     }
 
@@ -24,20 +23,13 @@ export default function CallbackPage() {
 
     async function checkSession() {
       try {
-        console.log(
-          `🔍 Checking session... (attempt ${retryCount + 1}/${maxRetries})`
-        );
+        console.log(`🔍 Checking session... (attempt ${retryCount + 1}/5)`);
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
-          {
-            credentials: "include",
-            cache: "no-store",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        // ✅ FIX PALING PENTING — PAKAI PROXY NEXTJS
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
 
         console.log("📡 Response status:", res.status);
 
@@ -45,59 +37,45 @@ export default function CallbackPage() {
           const user = await res.json();
           console.log("✅ User authenticated:", user);
 
-          // Small delay untuk ensure cookies fully set
-          setTimeout(() => {
-            router.replace(redirectPath);
-          }, 500);
+          setTimeout(() => router.replace(redirectPath), 300);
         } else {
-          // Retry jika session belum ready
           if (retryCount < maxRetries) {
             setRetryCount((prev) => prev + 1);
-            timeoutId = setTimeout(checkSession, 1500); // Retry setiap 1.5 detik
+            timeoutId = setTimeout(checkSession, 1200);
           } else {
-            console.error("❌ Max retries reached");
             setError("Session tidak ditemukan. Silakan login kembali.");
-            setTimeout(() => router.replace("/Auth/Login"), 2000);
+            setTimeout(() => router.replace("/Auth/Login"), 1500);
           }
         }
       } catch (err) {
-        console.error("❌ Check session error:", err);
+        console.error("❌ Error checking session:", err);
 
         if (retryCount < maxRetries) {
           setRetryCount((prev) => prev + 1);
-          timeoutId = setTimeout(checkSession, 1500);
+          timeoutId = setTimeout(checkSession, 1200);
         } else {
           setError("Terjadi kesalahan. Silakan login kembali.");
-          setTimeout(() => router.replace("/Auth/Login"), 2000);
+          setTimeout(() => router.replace("/Auth/Login"), 1500);
         }
       }
     }
 
     checkSession();
 
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [errorParam, redirectPath, router, retryCount]);
+    return () => timeoutId && clearTimeout(timeoutId);
+  }, [router, retryCount, redirectPath, errorParam]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
       {error ? (
         <>
-          <div className="text-red-500 text-lg font-semibold">❌ {error}</div>
-          <p className="text-gray-500">Mengalihkan ke halaman login...</p>
+          <div className="text-red-500 text-lg font-semibold">{error}</div>
+          <p className="text-gray-500">Mengalihkan ke login...</p>
         </>
       ) : (
         <>
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
-          <div className="text-center">
-            <p className="text-gray-700 font-medium text-lg">
-              Memverifikasi sesi...
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Percobaan {retryCount + 1} dari 5
-            </p>
-          </div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600">Memverifikasi sesi...</p>
         </>
       )}
     </div>
