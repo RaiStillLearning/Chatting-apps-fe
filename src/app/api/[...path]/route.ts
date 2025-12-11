@@ -3,103 +3,77 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// Next.js v16 dynamic API route → params MUST be Promise
-export async function GET(
-  req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+// ⚠️ Next.js 16 validator expects PROMISE params
+// ⚠️ Runtime gives SYNC params
+//
+// Jadi kita buat tipe hybrid agar validator TIDAK error
+type Context = {
+  params: { path: string[] } | Promise<{ path: string[] }>;
+};
+
+export async function GET(req: NextRequest, ctx: Context) {
+  return handler(req, ctx);
 }
-export async function POST(
-  req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+export async function POST(req: NextRequest, ctx: Context) {
+  return handler(req, ctx);
 }
-export async function PUT(
-  req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+export async function PUT(req: NextRequest, ctx: Context) {
+  return handler(req, ctx);
 }
-export async function PATCH(
-  req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+export async function PATCH(req: NextRequest, ctx: Context) {
+  return handler(req, ctx);
 }
-export async function DELETE(
-  req: NextRequest,
-  ctx: { params: Promise<{ path: string[] }> }
-) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+export async function DELETE(req: NextRequest, ctx: Context) {
+  return handler(req, ctx);
 }
 
 // -----------------------------------------------------------
-// ⭐ PROXY FUNCTION (TANPA ANY)
+// MAIN HANDLER (NO ANY, COOKIE-FORWARD WORKING)
 // -----------------------------------------------------------
-async function proxy(req: NextRequest, path: string[]) {
-  const method = req.method;
-  const backendURL = `${API_URL}/${path.join("/")}${req.nextUrl.search}`;
+async function handler(req: NextRequest, ctx: Context) {
+  // ⬅️ FIX PALING PENTING
+  // Validator expects Promise, runtime gives object → kita normalize
+  const params = ctx.params instanceof Promise ? await ctx.params : ctx.params;
 
-  console.log(`🔁 PROXY → ${method} ${backendURL}`);
+  const path = params.path;
+  const url = `${API_URL}/${path.join("/")}${req.nextUrl.search}`;
+
+  console.log("🔁 PROXY ->", req.method, url);
 
   const contentType = req.headers.get("content-type") ?? "";
-
-  // -----------------------
-  // ⭐ FIX: No-any body type
-  // -----------------------
   let body: string | FormData | undefined = undefined;
 
-  if (!["GET", "DELETE"].includes(method)) {
-    if (contentType.includes("application/json")) {
-      body = await req.text(); // JSON string persis
-    } else if (contentType.includes("form-data")) {
-      body = await req.formData();
-    } else {
-      body = await req.text();
-    }
+  if (!["GET", "DELETE"].includes(req.method)) {
+    if (contentType.includes("application/json")) body = await req.text();
+    else if (contentType.includes("form-data")) body = await req.formData();
+    else body = await req.text();
   }
 
-  // -----------------------
-  // SEND REQUEST KE BACKEND
-  // -----------------------
-  const backendRes = await fetch(backendURL, {
-    method,
+  const backend = await fetch(url, {
+    method: req.method,
     credentials: "include",
-    body,
     headers: {
       "Content-Type": contentType,
-      Cookie: req.headers.get("cookie") ?? "",
+      Cookie: req.headers.get("cookie") || "",
     },
+    body,
   });
 
-  const raw = await backendRes.text();
-  const type = backendRes.headers.get("content-type") ?? "text/plain";
-
-  const nextRes = new NextResponse(raw, {
-    status: backendRes.status,
+  const raw = await backend.text();
+  const next = new NextResponse(raw, {
+    status: backend.status,
     headers: {
-      "Content-Type": type,
+      "Content-Type": backend.headers.get("content-type") || "text/plain",
     },
   });
 
-  // -----------------------------------
-  // ⭐ FIX PALING PENTING — SET-COOKIE
-  // -----------------------------------
+  // Forward ALL cookies
   const cookies =
-    backendRes.headers.getSetCookie?.() ??
-    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ??
+    backend.headers.getSetCookie?.() ||
+    backend.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ||
     [];
 
-  for (const cookie of cookies) {
-    nextRes.headers.append("Set-Cookie", cookie);
-  }
+  cookies.forEach((c) => next.headers.append("Set-Cookie", c));
 
-  return nextRes;
+  return next;
 }
