@@ -25,11 +25,11 @@ export default function CallbackPage() {
       try {
         console.log(`🔍 Checking session... (attempt ${retryCount + 1}/5)`);
 
-        // ✅ FIX PALING PENTING — PAKAI PROXY NEXTJS
-        const res = await fetch("/api/auth/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
+          // ✅ FIX PALING PENTING — PAKAI PROXY NEXTJS
+          const res = await fetch("/api/auth/me", {
+            credentials: "include",
+            cache: "no-store",
+          });
 
         console.log("📡 Response status:", res.status);
 
