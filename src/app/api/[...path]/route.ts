@@ -3,47 +3,62 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// ******************************
-// Next.js 16 Route Params Format
-// ******************************
-export interface RouteContext {
-  params: {
-    path: string[];
-  };
+// Next.js 16 expects:
+// params: Promise<{ path: string[] }>
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const params = await ctx.params;
+  return proxy(req, params.path, "GET");
 }
 
-export function GET(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "GET");
+export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const params = await ctx.params;
+  return proxy(req, params.path, "POST");
 }
 
-export function POST(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "POST");
+export async function PUT(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const params = await ctx.params;
+  return proxy(req, params.path, "PUT");
 }
 
-export function PUT(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "PUT");
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const params = await ctx.params;
+  return proxy(req, params.path, "DELETE");
 }
 
-export function DELETE(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "DELETE");
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> }
+) {
+  const params = await ctx.params;
+  return proxy(req, params.path, "PATCH");
 }
 
-export function PATCH(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "PATCH");
-}
-
-// ******************************
+// --------------------------
 // PROXY FUNCTION
-// ******************************
-async function proxy(request: NextRequest, ctx: RouteContext, method: string) {
-  const segments = ctx?.params?.path || [];
-  const endpoint = segments.join("/");
+// --------------------------
+async function proxy(
+  request: NextRequest,
+  pathParts: string[],
+  method: string
+) {
+  const fullPath = pathParts.join("/");
+  const backendURL = `${API_URL}/${fullPath}${request.nextUrl.search}`;
 
-  const backendUrl = `${API_URL}/${endpoint}${request.nextUrl.search}`;
+  console.log(`🔁 PROXY → ${method} ${backendURL}`);
 
-  console.log(`🔁 Proxy → ${method} ${backendUrl}`);
-
-  // Handle body
+  // BODY HANDLING
   let body: BodyInit | undefined = undefined;
   const contentType = request.headers.get("content-type") || "";
 
@@ -57,33 +72,34 @@ async function proxy(request: NextRequest, ctx: RouteContext, method: string) {
     }
   }
 
-  // Forward to backend
-  const backendRes = await fetch(backendUrl, {
+  const backendRes = await fetch(backendURL, {
     method,
     headers: {
       "Content-Type": contentType,
       Cookie: request.headers.get("cookie") || "",
     },
-    body,
     credentials: "include",
+    body,
   });
 
-  // Handle response
+  const responseText = await backendRes.text();
   const resType = backendRes.headers.get("content-type") || "text/plain";
-  const raw = await backendRes.text();
 
-  const response = new NextResponse(raw, {
+  const response = new NextResponse(responseText, {
     status: backendRes.status,
-    headers: { "Content-Type": resType },
+    headers: {
+      "Content-Type": resType,
+    },
   });
 
-  // Forward cookies
-  const cookies =
+  const cookieHeaders =
     backendRes.headers.getSetCookie?.() ||
     backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ||
     [];
 
-  cookies.forEach((c) => response.headers.append("Set-Cookie", c));
+  cookieHeaders.forEach((cookie) => {
+    response.headers.append("Set-Cookie", cookie);
+  });
 
   return response;
 }
