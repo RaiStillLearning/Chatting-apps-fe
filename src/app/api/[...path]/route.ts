@@ -3,58 +3,52 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://chatting-apps-be.up.railway.app";
 
-// Type resmi Next.js 16 untuk route dynamic [...path]
-interface RouteContext {
-  params: {
-    path: string[];
-  };
+// 🔥 FIX: type resmi Next.js 16
+type RouteContext = {
+  params: Promise<{ path: string[] }>;
+};
+
+export async function GET(req: NextRequest, ctx: RouteContext) {
+  return proxy(req, await ctx.params, "GET");
+}
+export async function POST(req: NextRequest, ctx: RouteContext) {
+  return proxy(req, await ctx.params, "POST");
+}
+export async function PUT(req: NextRequest, ctx: RouteContext) {
+  return proxy(req, await ctx.params, "PUT");
+}
+export async function DELETE(req: NextRequest, ctx: RouteContext) {
+  return proxy(req, await ctx.params, "DELETE");
+}
+export async function PATCH(req: NextRequest, ctx: RouteContext) {
+  return proxy(req, await ctx.params, "PATCH");
 }
 
-export function GET(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "GET");
-}
-export function POST(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "POST");
-}
-export function PUT(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "PUT");
-}
-export function DELETE(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "DELETE");
-}
-export function PATCH(req: NextRequest, ctx: RouteContext) {
-  return proxy(req, ctx, "PATCH");
-}
-
-async function proxy(request: NextRequest, ctx: RouteContext, method: string) {
-  const pathList = ctx.params?.path || [];
-  const fullPath = pathList.join("/");
-
+async function proxy(
+  request: NextRequest,
+  params: { path: string[] },
+  method: string
+) {
+  const fullPath = (params.path || []).join("/");
   const backendURL = `${API_URL}/${fullPath}${request.nextUrl.search}`;
 
   console.log(`🔁 PROXY → ${method} ${backendURL}`);
 
-  // --------------------------
-  // Body handling
-  // --------------------------
-  let body: BodyInit | undefined = undefined;
-
+  // ---- Body handling ----
+  let body: BodyInit | null = null;
   if (!["GET", "DELETE"].includes(method)) {
-    const contentType = request.headers.get("content-type") || "";
-
-    if (contentType.includes("application/json")) {
-      body = await request.text(); // exact JSON string (tidak dirusak)
-    } else if (contentType.includes("form-data")) {
+    const ct = request.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      body = await request.text();
+    } else if (ct.includes("form-data")) {
       body = await request.formData();
     } else {
       body = await request.text();
     }
   }
 
-  // --------------------------
-  // Forward request to backend
-  // --------------------------
-  const backendResponse = await fetch(backendURL, {
+  // ---- Forward to backend ----
+  const backendRes = await fetch(backendURL, {
     method,
     headers: {
       "Content-Type": request.headers.get("content-type") || "",
@@ -64,23 +58,18 @@ async function proxy(request: NextRequest, ctx: RouteContext, method: string) {
     credentials: "include",
   });
 
-  // --------------------------
-  // Output response
-  // --------------------------
-  const contentType = backendResponse.headers.get("content-type") || "";
-  const raw = await backendResponse.text();
+  const responseText = await backendRes.text();
+  const contentType = backendRes.headers.get("content-type") || "text/plain";
 
-  const response = new NextResponse(raw, {
-    status: backendResponse.status,
+  const response = new NextResponse(responseText, {
+    status: backendRes.status,
     headers: { "Content-Type": contentType },
   });
 
-  // --------------------------
-  // Forward ALL Set-Cookie headers from backend → browser
-  // --------------------------
+  // ---- Forward cookies ----
   const cookieHeaders =
-    backendResponse.headers.getSetCookie?.() ||
-    backendResponse.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ||
+    backendRes.headers.getSetCookie?.() ||
+    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/) ||
     [];
 
   cookieHeaders.forEach((cookie) => {
