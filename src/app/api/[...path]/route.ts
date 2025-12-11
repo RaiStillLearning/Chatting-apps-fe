@@ -23,48 +23,43 @@ export async function DELETE(req: NextRequest, ctx: Params) {
 
 async function handler(req: NextRequest, ctx: Params) {
   // NORMALISASI RUNTIME
-  const params = ctx.params instanceof Promise ? await ctx.params : ctx.params;
+  const params = await ctx.params;
+  const path = params.path.join("/");
 
-  const target = `${API_URL}/${params.path.join("/")}${req.nextUrl.search}`;
+  const target = `${API_URL}/${path}${req.nextUrl.search}`;
 
-  const contentType = req.headers.get("content-type") ?? "";
-  let body: string | FormData | undefined;
+  console.log("➡️ PROXY FETCH:", target);
 
-  if (!["GET", "DELETE"].includes(req.method)) {
-    if (contentType.includes("application/json")) body = await req.text();
-    else if (contentType.includes("form-data")) body = await req.formData();
-    else body = await req.text();
-  }
-
-  // REQUEST KE BACKEND
-  const backend = await fetch(target, {
+  // PROXY MUST FORWARD COOKIE FROM NEXT SERVER STORAGE
+  const backendRes = await fetch(target, {
     method: req.method,
-    body,
     credentials: "include",
     headers: {
-      "Content-Type": contentType,
-      Cookie: req.headers.get("cookie") ?? "",
+      "Content-Type": req.headers.get("content-type") || "",
+      // 🔥 FIX PALING PENTING
+      Cookie: req.headers.get("cookie") || "",
     },
+    body: ["GET", "DELETE"].includes(req.method) ? undefined : await req.text(),
   });
 
-  const raw = await backend.text();
+  // Read backend result
+  const body = await backendRes.text();
 
-  const res = new NextResponse(raw, {
-    status: backend.status,
+  const res = new NextResponse(body, {
+    status: backendRes.status,
     headers: {
-      "Content-Type": backend.headers.get("content-type") ?? "application/json",
+      "Content-Type":
+        backendRes.headers.get("content-type") || "application/json",
     },
   });
 
-  // 🔥 FIX PALING PENTING
+  // 🔥 FORWARD **ALL** COOKIES DARI BACKEND → BROWSER
   const cookies =
-    backend.headers.getSetCookie?.() ??
-    backend.headers.get("set-cookie")?.split(/,(?=[^;]+=)/g) ??
+    backendRes.headers.getSetCookie?.() ||
+    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/g) ||
     [];
 
-  for (const cookie of cookies) {
-    res.headers.append("Set-Cookie", cookie);
-  }
+  cookies.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
 
   return res;
 }
