@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-// HYBRID PARAM TYPE (agar validator Next.js tidak error)
 type Params = { params: { path: string[] } | Promise<{ path: string[] }> };
 
 export async function GET(req: NextRequest, ctx: Params) {
@@ -22,7 +22,6 @@ export async function DELETE(req: NextRequest, ctx: Params) {
 }
 
 async function handler(req: NextRequest, ctx: Params) {
-  // NORMALISASI RUNTIME
   const params = await ctx.params;
   const path = params.path.join("/");
 
@@ -30,19 +29,20 @@ async function handler(req: NextRequest, ctx: Params) {
 
   console.log("➡️ PROXY FETCH:", target);
 
-  // PROXY MUST FORWARD COOKIE FROM NEXT SERVER STORAGE
+  // ⬅️🍪 FIX PALING PENTING
+  const cookieStore = cookies();
+  const cookieHeader = cookieStore.toString(); // AMBIL SEMUA COOKIE DARI BROWSER
+
   const backendRes = await fetch(target, {
     method: req.method,
     credentials: "include",
     headers: {
       "Content-Type": req.headers.get("content-type") || "",
-      // 🔥 FIX PALING PENTING
-      Cookie: req.headers.get("cookie") || "",
+      Cookie: cookieHeader, // ⬅️ KIRIM COOKIE KE BACKEND
     },
     body: ["GET", "DELETE"].includes(req.method) ? undefined : await req.text(),
   });
 
-  // Read backend result
   const body = await backendRes.text();
 
   const res = new NextResponse(body, {
@@ -53,13 +53,13 @@ async function handler(req: NextRequest, ctx: Params) {
     },
   });
 
-  // 🔥 FORWARD **ALL** COOKIES DARI BACKEND → BROWSER
-  const cookies =
+  // 🔥 FORWARD COOKIE DARI BACKEND → BROWSER
+  const cookiesSet =
     backendRes.headers.getSetCookie?.() ||
     backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/g) ||
     [];
 
-  cookies.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
+  cookiesSet.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
 
   return res;
 }
