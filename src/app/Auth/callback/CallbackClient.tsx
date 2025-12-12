@@ -18,52 +18,42 @@ export default function CallbackPage() {
       return;
     }
 
-    const maxRetries = 5;
-    let timeoutId: NodeJS.Timeout;
-
-    async function checkSession() {
+    async function finalizeGoogleLogin() {
       try {
-        console.log(`🔍 Checking session... (attempt ${retryCount + 1}/5)`);
-
-          // ✅ FIX PALING PENTING — PAKAI PROXY NEXTJS
-          const res = await fetch("/api/auth/me", {
+        // 1️⃣ PANGGIL CALLBACK PROXY DULU → INI YANG SET COOKIE!!!
+        const callbackRes = await fetch(
+          `/api/auth/google/callback?redirect=${redirectPath}`,
+          {
+            method: "GET",
             credentials: "include",
             cache: "no-store",
-          });
+          }
+        );
 
-        console.log("📡 Response status:", res.status);
+        console.log("Callback status:", callbackRes.status);
+
+        // 2️⃣ Setelah callback → baru cek session
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
 
         if (res.ok) {
           const user = await res.json();
-          console.log("✅ User authenticated:", user);
-
-          setTimeout(() => router.replace(redirectPath), 300);
+          console.log("User OK:", user);
+          router.replace(redirectPath);
         } else {
-          if (retryCount < maxRetries) {
-            setRetryCount((prev) => prev + 1);
-            timeoutId = setTimeout(checkSession, 1200);
-          } else {
-            setError("Session tidak ditemukan. Silakan login kembali.");
-            setTimeout(() => router.replace("/Auth/Login"), 1500);
-          }
+          console.log("Session belum ada, retry…");
+          setTimeout(finalizeGoogleLogin, 800);
         }
       } catch (err) {
-        console.error("❌ Error checking session:", err);
-
-        if (retryCount < maxRetries) {
-          setRetryCount((prev) => prev + 1);
-          timeoutId = setTimeout(checkSession, 1200);
-        } else {
-          setError("Terjadi kesalahan. Silakan login kembali.");
-          setTimeout(() => router.replace("/Auth/Login"), 1500);
-        }
+        console.error("ERROR:", err);
+        router.replace("/Auth/Login");
       }
     }
 
-    checkSession();
-
-    return () => timeoutId && clearTimeout(timeoutId);
-  }, [router, retryCount, redirectPath, errorParam]);
+    finalizeGoogleLogin();
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
