@@ -77,13 +77,12 @@ export function LoginForm({ className, onSubmit, loading }: LoginFormProps) {
             <Button
               variant="outline"
               className="w-full"
+              asChild
               disabled={loading}
-              onClick={() => {
-                window.location.href =
-                  "/api/auth/google?redirect=/Rumpi/Dashboard";
-              }}
             >
-              Login with Google
+              <a href="/api/auth/google?redirect=/Rumpi/Dashboard">
+                Login with Google
+              </a>
             </Button>
 
             <FieldDescription className="text-center text-sm">
