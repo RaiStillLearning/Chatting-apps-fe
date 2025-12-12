@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export async function GET(req: NextRequest) {
+  // path setelah login berhasil
   const redirect =
     req.nextUrl.searchParams.get("redirect") || "/Rumpi/Dashboard";
 
-  // Redirect browser ke backend Google login
-  return NextResponse.redirect(
-    `${API_URL}/api/auth/google?redirect=${redirect}`,
-    { status: 307 }
-  );
+  // arahkan user ke backend
+  const url = `${API_URL}/api/auth/google?redirect=${redirect}`;
+
+  return NextResponse.redirect(url);
 }
