@@ -6,7 +6,8 @@ export async function GET(req: NextRequest) {
   const redirect =
     req.nextUrl.searchParams.get("redirect") || "/Rumpi/Dashboard";
 
-  const backendUrl = `${API_URL}/api/auth/google/callback?${req.nextUrl.search}`;
+  // FIX: jangan pakai "?${req.nextUrl.search}"
+  const backendUrl = `${API_URL}/api/auth/google/callback${req.nextUrl.search}`;
 
   const backendRes = await fetch(backendUrl, {
     method: "GET",
@@ -16,11 +17,14 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // forward cookies
+  // forward cookies dari backend ke browser
   const res = NextResponse.redirect(redirect, 307);
 
+  // perbaikan cookie parser
   const setCookies =
-    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=)/g) || [];
+    backendRes.headers.getSetCookie?.() ||
+    backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=)/g) ||
+    [];
 
   for (const cookie of setCookies) {
     res.headers.append("Set-Cookie", cookie);
