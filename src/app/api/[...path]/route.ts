@@ -29,23 +29,24 @@ async function handler(req: NextRequest, ctx: Params) {
 
   console.log("➡️ PROXY FETCH:", target);
 
-  // ⬅️🍪 FIX PALING PENTING
-  const cookieStore = cookies();
-  const cookieHeader = cookieStore.toString(); // AMBIL SEMUA COOKIE DARI BROWSER
+  const cookieString = req.cookies
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
 
   const backendRes = await fetch(target, {
     method: req.method,
     credentials: "include",
     headers: {
       "Content-Type": req.headers.get("content-type") || "",
-      Cookie: cookieHeader, // ⬅️ KIRIM COOKIE KE BACKEND
+      Cookie: cookieString, // 🔥 FIX PALING KRITIS
     },
     body: ["GET", "DELETE"].includes(req.method) ? undefined : await req.text(),
   });
 
-  const body = await backendRes.text();
+  const text = await backendRes.text();
 
-  const res = new NextResponse(body, {
+  const res = new NextResponse(text, {
     status: backendRes.status,
     headers: {
       "Content-Type":
@@ -53,13 +54,12 @@ async function handler(req: NextRequest, ctx: Params) {
     },
   });
 
-  // 🔥 FORWARD COOKIE DARI BACKEND → BROWSER
-  const cookiesSet =
+  const cookies =
     backendRes.headers.getSetCookie?.() ||
     backendRes.headers.get("set-cookie")?.split(/,(?=[^;]+=[^;]+)/g) ||
     [];
 
-  cookiesSet.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
+  cookies.forEach((cookie) => res.headers.append("Set-Cookie", cookie));
 
   return res;
 }
